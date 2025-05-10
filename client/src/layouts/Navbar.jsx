@@ -1,74 +1,214 @@
 // src/layouts/Navbar.jsx
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  FaBars, FaTimes, FaChevronLeft, FaChevronRight, FaSun, FaMoon, FaBell, FaCog, FaUserCircle, FaLock,
+  FaSignOutAlt, FaGlobe, FaAngleDown, FaPlus
+} from 'react-icons/fa';
 
-const Navbar = () => {
-return (
-    <nav className="bg-slate-100 shadow-md dark:bg-gray-800 p-4  top-0 transition-all duration-300 ease-in-out">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-                <div className="flex items-center">
-                    <a href="/" className="flex-shrink-0 text-xl font-bold text-blue-600">
-                        نظام HR
-                    </a>
+const mockNotifications = [
+    { id: 1, title: "تحديث جديد", message: "تم إصدار نسخة جديدة من النظام.", created_at: "2024-05-20 10:00" },
+    { id: 2, title: "طلب إجازة", message: "طلب إجازة جديد من الموظف أحمد.", created_at: "2024-05-20 09:30" },
+    { id: 3, title: "مهمة مكتملة", message: "تم إكمال المهمة المعينة لك.", created_at: "2024-05-19 15:00" },
+];
+
+const Navbar = ({
+  onToggleMobileSidebar,
+  onToggleMainSidebar,
+  isMainSidebarOpen,
+  isDarkMode,
+  toggleDarkMode,
+  currentLanguage,
+  switchLanguage,
+  user,
+  onLogout,
+  breadcrumb
+}) => {
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+
+  const notificationsRef = useRef(null);
+  const settingsRef = useRef(null);
+  const languageRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) setIsNotificationsOpen(false);
+      if (settingsRef.current && !settingsRef.current.contains(event.target)) setIsSettingsOpen(false);
+      if (languageRef.current && !languageRef.current.contains(event.target)) setIsLanguageDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleToggleNotifications = (e) => { e.stopPropagation(); setIsNotificationsOpen(p => !p); setIsSettingsOpen(false); setIsLanguageDropdownOpen(false); };
+  const handleToggleSettings = (e) => { e.stopPropagation(); setIsSettingsOpen(p => !p); setIsNotificationsOpen(false); setIsLanguageDropdownOpen(false); };
+  const handleToggleLanguageDropdown = (e) => { e.stopPropagation(); setIsLanguageDropdownOpen(p => !p); setIsNotificationsOpen(false); setIsSettingsOpen(false); };
+
+  const currentBreadcrumb = breadcrumb || (currentLanguage === 'ar' ? "الرئيسية" : "Dashboard");
+  const dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+
+  return (
+    <nav
+      className="bg-white dark:bg-slate-800/80 backdrop-blur-sm shadow-sm
+                 sticky top-0 z-30 h-16
+                 flex items-center justify-between px-4 sm:px-6
+                 transition-colors duration-300 ease-in-out"
+    >
+      {/* Left Side (or Right in RTL) of Navbar */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <button
+          onClick={onToggleMainSidebar}
+          className="text-slate-500 dark:text-slate-400 focus:outline-none hidden lg:block p-2 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
+          title={isMainSidebarOpen ? (dir === 'rtl' ? "تصغير الشريط" : "Collapse Sidebar") : (dir === 'rtl' ? "توسيع الشريط" : "Expand Sidebar")}
+        >
+          {isMainSidebarOpen ?
+            (dir === 'rtl' ? <FaChevronRight size={18} /> : <FaChevronLeft size={18} />) :
+            (dir === 'rtl' ? <FaChevronLeft size={18} /> : <FaChevronRight size={18} />)
+          }
+        </button>
+
+        <button
+          onClick={onToggleMobileSidebar}
+          className="text-slate-500 dark:text-slate-400 focus:outline-none lg:hidden p-2 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
+          aria-label={dir === 'rtl' ? "فتح القائمة" : "Open menu"}
+        >
+          <FaBars size={20} />
+        </button>
+
+        <div className="hidden sm:flex items-center text-sm font-medium text-slate-700 dark:text-slate-300">
+          <span>{currentBreadcrumb}</span>
+        </div>
+      </div>
+
+      {/* Right Side (or Left in RTL) of Navbar - Icons */}
+      <div className={`flex items-center space-x-2 sm:space-x-3 ${dir === 'rtl' ? 'space-x-reverse sm:space-x-reverse' : ''}`}>
+        <button
+          onClick={toggleDarkMode}
+          className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 focus:outline-none"
+          title={isDarkMode ? (dir === 'rtl' ? "وضع فاتح" : "Light Mode") : (dir === 'rtl' ? "وضع داكن" : "Dark Mode")}
+        >
+          {isDarkMode ? <FaSun size={18} className="text-yellow-400" /> : <FaMoon size={18} className="text-sky-500" />}
+        </button>
+
+        <div className="relative" ref={notificationsRef}>
+          <button
+            onClick={handleToggleNotifications}
+            className="relative p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 focus:outline-none"
+          >
+            <FaBell size={18} />
+            {mockNotifications.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white rounded-full text-[10px] w-4 h-4 flex items-center justify-center font-semibold animate-pulse">
+                {mockNotifications.length}
+              </span>
+            )}
+          </button>
+          {isNotificationsOpen && (
+            <div className={`absolute mt-2 w-72 sm:w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-800 rounded-xl shadow-xl z-50 border dark:border-slate-200 dark:border-slate-700 ${dir === 'rtl' ? 'left-0' : 'right-0'}`}>
+              <div className="p-3 font-semibold border-b dark:border-slate-700 sticky top-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm text-slate-800 dark:text-slate-100">
+                {dir === 'rtl' ? 'الإشعارات' : 'Notifications'}
+              </div>
+              {mockNotifications.length > 0 ? (
+                mockNotifications.map((notification) => (
+                  <div key={notification.id} className="p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b dark:border-slate-700/50 last:border-b-0">
+                    <div className="font-medium text-sm text-slate-700 dark:text-slate-200">{notification.title}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{notification.message}</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{notification.created_at}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
+                  {dir === 'rtl' ? 'لا توجد إشعارات جديدة.' : 'No new notifications.'}
                 </div>
-                <div className="hidden md:block">
-                    <div className="ml-10 flex items-baseline space-x-4">
-                        {/* روابط Navbar هنا - مثال */}
-                        <a
-                        href="#"
-                        className="text-gray-700 hover:bg-gray-200 hover:text-black px-3 py-2 rounded-md text-sm font-medium"
-                        >
-                        لوحة التحكم
-                        </a>
-                        <a
-                        href="#"
-                        className="text-gray-700 hover:bg-gray-200 hover:text-black px-3 py-2 rounded-md text-sm font-medium"
-                        >
-                        الموظفين
-                        </a>
-                    </div>
-                </div>
-                <div className="flex items-center">
-                    {/* أيقونة المستخدم أو زر تسجيل الدخول */}
-                    <button className="p-1 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500">
-                        <span className="sr-only">View notifications</span>
-                        {/* يمكنك استخدام أيقونة هنا (مثلاً من مكتبة أيقونات) */}
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                    </button>
-                    {/* قائمة منسدلة للمستخدم */}
-                </div>
-                <div className="-mr-2 flex md:hidden"> {/* زر القائمة للهواتف */}
-                    <button
-                        type="button"
-                        className="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-                        aria-controls="mobile-menu"
-                        aria-expanded="false"
-                    >
-                        <span className="sr-only">Open main menu</span>
-                        {/* أيقونة الهمبرغر */}
-                        <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                        {/* أيقونة الإغلاق (X) */}
-                        <svg className="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+              )}
+              <div className="p-2 text-center border-t dark:border-slate-700 sticky bottom-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+                <a href="#" className="text-sm text-sky-600 dark:text-sky-400 hover:underline">
+                  {dir === 'rtl' ? 'عرض الكل' : 'View All'}
+                </a>
+              </div>
             </div>
+          )}
         </div>
 
-        {/* قائمة الهاتف المحمول، تظهر/تختفي بناءً على الحالة */}
-        <div className="md:hidden" id="mobile-menu">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="#" className="text-gray-700 hover:bg-gray-200 hover:text-black block px-3 py-2 rounded-md text-base font-medium">لوحة التحكم</a>
-                <a href="#" className="text-gray-700 hover:bg-gray-200 hover:text-black block px-3 py-2 rounded-md text-base font-medium">الموظفين</a>
+        <div className="relative" ref={settingsRef}>
+          <button
+            onClick={handleToggleSettings}
+            className="w-9 h-9 rounded-full overflow-hidden focus:outline-none ring-2 ring-transparent hover:ring-sky-500 dark:hover:ring-sky-400 focus:ring-sky-500 dark:focus:ring-sky-400 transition"
+          >
+            {user && user.profileImageUrl ? (
+              <img src={user.profileImageUrl} alt={user.name || "User Avatar"} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-white">
+                <FaUserCircle size={24} className="opacity-80" />
+              </div>
+            )}
+          </button>
+          {isSettingsOpen && (
+            <div className={`absolute mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl z-50 border dark:border-slate-200 dark:border-slate-700 overflow-hidden ${dir === 'rtl' ? 'left-0' : 'right-0'}`}>
+              <div className="px-4 py-3 border-b dark:border-slate-700">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{user?.name || "Guest"}</p>
+                {/* <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user?.email || ""}</p> */}
+              </div>
+              <a href="#" className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                <FaUserCircle className="text-slate-500 dark:text-slate-400" /><span>{dir === 'rtl' ? "الملف الشخصي" : "Profile"}</span>
+              </a>
+              <a href="#" className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                <FaLock className="text-slate-500 dark:text-slate-400" /><span>{dir === 'rtl' ? "تغيير كلمة المرور" : "Change Password"}</span>
+              </a>
+              <button
+                onClick={onLogout}
+                className="flex items-center w-full text-left gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-700/30"
+              >
+                <FaSignOutAlt /><span>{dir === 'rtl' ? "تسجيل الخروج" : "Logout"}</span>
+              </button>
             </div>
+          )}
         </div>
+
+        <div className="relative hidden sm:block" ref={languageRef}>
+          <button
+            onClick={handleToggleLanguageDropdown}
+            className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 flex items-center focus:outline-none"
+          >
+            <FaGlobe size={18} />
+            <FaAngleDown size={12} className={`${dir === 'rtl' ? 'mr-1' : 'ml-1'}`} />
+          </button>
+          {isLanguageDropdownOpen && (
+            <div className={`absolute mt-2 w-36 bg-white dark:bg-slate-800 rounded-md shadow-lg border dark:border-slate-200 dark:border-slate-700 z-50 overflow-hidden ${dir === 'rtl' ? 'left-0' : 'right-0'}`}>
+              <ul className="py-1">
+                <li>
+                  <button
+                    onClick={() => switchLanguage('ar')}
+                    className={`block w-full px-4 py-2 text-sm ${dir === 'rtl' ? 'text-right' : 'text-left'} ${currentLanguage === 'ar' ? 'font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-700/30' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
+                  >
+                    العربية
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => switchLanguage('en')}
+                    className={`block w-full px-4 py-2 text-sm ${dir === 'rtl' ? 'text-right' : 'text-left'} ${currentLanguage === 'en' ? 'font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-700/30' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
+                  >
+                    English
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {user?.roles?.includes('admin') && (
+            <a
+                href="#"
+                className="hidden sm:inline-flex p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 hover:text-sky-600 dark:hover:text-sky-400"
+                title={dir === 'rtl' ? "إضافة جديدة" : "Add New"}
+            >
+                <FaPlus size={18} />
+            </a>
+        )}
+      </div>
     </nav>
-);
+  );
 };
 
 export default Navbar;

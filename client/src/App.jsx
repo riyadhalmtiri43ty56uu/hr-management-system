@@ -1,61 +1,146 @@
-// src/App.jsx (أو أي مكون آخر)
+// src/App.jsx
 import React, { useState, useEffect } from 'react';
 import Navbar from './layouts/Navbar';
 import Sidebar from './layouts/Sidebar';
-import Button from './components/ui/Button'; // استيراد الزر
-import Modal from './components/ui/Modal';   // استيراد المودال
 
 function App() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [serverMessage, setServerMessage] = useState(''); // حالة لتخزين رسالة الخادم
+  // --- الحالة العامة للتطبيق ---
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // للشاشات الكبيرة
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false); // للهواتف
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  // الوضع الداكن/الفاتح
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedMode = localStorage.getItem('darkMode');
+    if (savedMode !== null) {
+      return JSON.parse(savedMode);
+    }
+    // إذا لم يكن هناك وضع محفوظ، تحقق من تفضيلات النظام
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
-  // جلب البيانات من الخادم عند تحميل المكون
+  // اللغة الحالية
+  const [currentLanguage, setCurrentLanguage] = useState(() => {
+    return localStorage.getItem('language') || 'ar'; // الافتراضي 'ar'
+  });
+
+  // --- التأثيرات الجانبية (Side Effects) ---
   useEffect(() => {
-    fetch('http://localhost:5000/api/test') 
-    .then(response => response.json())
-    .then(data => setServerMessage(data.message))
-    .catch(error => console.error('Error fetching data:', error));
-  }, []); // المصفوفة الفارغة تعني أن التأثير سيُنفذ مرة واحدة بعد أول عرض
-  return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
-          <div className="container mx-auto px-6 py-8">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              مرحباً بك في نظام إدارة الموارد البشرية
-            </h1>
-            <p className='mt-2 text-gray-600'>
-              {serverMessage || "جاري تحميل الرسالة من الخادم..."} {/* عرض رسالة الخادم */}
-            </p>
-            <Button onClick={openModal} variant="primary" className="mt-4">
-              فتح مودال تجريبي
-            </Button>
+    // تطبيق الوضع الداكن/الفاتح على <html>
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
 
-            {/* المودال */}
-            <Modal
-              isOpen={isModalOpen}
-              onClose={closeModal}
-              title="مودال تجريبي"
-              size="md" // جرب أحجام مختلفة: 'sm', 'lg', 'xl'
-              footerContent={
-                <>
-                  <Button variant="outline" onClick={closeModal}>إلغاء</Button>
-                  <Button variant="primary" onClick={() => { alert('تم الحفظ!'); closeModal(); }}>حفظ التغييرات</Button>
-                </>
-              }
-            >
-              <p>هذا هو محتوى المودال. يمكنك وضع أي شيء هنا، مثل نموذج إدخال.</p>
-              <input type="text" className="mt-2 p-2 border rounded w-full" placeholder="أدخل نصًا..." />
-            </Modal>
+    // تطبيق اتجاه اللغة على <html>
+    document.documentElement.lang = currentLanguage;
+    document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+    localStorage.setItem('language', currentLanguage);
+
+  }, [isDarkMode, currentLanguage]);
+
+
+  // --- دوال تبديل الحالة ---
+  const toggleDarkMode = () => setIsDarkMode(prevMode => !prevMode);
+  const toggleMainSidebar = () => setIsSidebarOpen(prevOpen => !prevOpen);
+  const toggleMobileSidebar = () => setIsMobileSidebarOpen(prevOpen => !prevOpen);
+
+  const switchLanguage = (lang) => {
+    setCurrentLanguage(lang);
+    // أغلق الشريط الجانبي للهاتف عند تغيير اللغة إذا كان مفتوحًا (اختياري)
+    if (isMobileSidebarOpen) {
+      setIsMobileSidebarOpen(false);
+    }
+  };
+
+  const handleLogout = () => {
+    console.log("User logged out");
+    // TODO: Implement actual logout logic (clear token, redirect, etc.)
+  };
+
+  // --- بيانات وهمية للمستخدم (استبدلها ببيانات حقيقية من API) ---
+  const currentUser = {
+    name: "يوسف أحمد",
+    profileImageUrl: "/assets/images/avatar-placeholder.png", // ضع صورة في public/assets/images
+    logoUrl: "/assets/images/logo-placeholder.svg",       // ضع شعارًا في public/assets/images
+    roles: ['admin'] // مثال للأدوار
+  };
+
+  return (
+    <div className={`flex h-screen antialiased text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 overflow-hidden`}>
+      {/* Sidebar for larger screens (lg and up) */}
+      <div className="hidden lg:flex"> {/* استخدمنا flex هنا بدلًا من وضع fixed مباشرة في Sidebar */}
+        <Sidebar
+          isOpen={isSidebarOpen}
+          user={currentUser}
+          currentLanguage={currentLanguage}
+          // onToggle={toggleMainSidebar} // إذا كان زر التبديل داخل الشريط نفسه
+        />
+      </div>
+
+      {/* Mobile Sidebar (Overlay and Drawer) */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={toggleMobileSidebar}
+          aria-hidden="true"
+        ></div>
+      )}
+      <div
+        className={`fixed inset-y-0 z-40 flex w-64 transform flex-col bg-white dark:bg-slate-800 shadow-xl
+                   transition-transform duration-300 ease-in-out lg:hidden
+                   ${currentLanguage === 'ar' ? 'right-0' : 'left-0'}
+                   ${isMobileSidebarOpen
+                      ? 'translate-x-0'
+                      : (currentLanguage === 'ar' ? 'translate-x-full' : '-translate-x-full')
+                   }`}
+      >
+        <Sidebar
+          isOpen={true} // Mobile sidebar is always "fully open" in its container
+          user={currentUser}
+          isMobileView={true}
+          currentLanguage={currentLanguage}
+          onLinkClick={toggleMobileSidebar} // لإغلاق الشريط عند النقر على رابط
+        />
+      </div>
+
+      {/* Main Content Area (Navbar + Page Content) */}
+      <div
+        className={`flex-1 flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out
+                   lg:${currentLanguage === 'ar' ? (isSidebarOpen ? 'mr-64' : 'mr-20') : (isSidebarOpen ? 'ml-64' : 'ml-20')}`}
+      >
+        <Navbar
+          onToggleMobileSidebar={toggleMobileSidebar}
+          onToggleMainSidebar={toggleMainSidebar}
+          isMainSidebarOpen={isSidebarOpen}
+          isDarkMode={isDarkMode}
+          toggleDarkMode={toggleDarkMode}
+          currentLanguage={currentLanguage}
+          switchLanguage={switchLanguage}
+          user={currentUser}
+          onLogout={handleLogout}
+          breadcrumb="لوحة التحكم" // سيتم تحديث هذا لاحقًا بـ React Router
+        />
+        <main className="flex-1 p-4 sm:p-6 bg-slate-50 dark:bg-slate-800/50"> {/* ألوان خلفية أفتح للمحتوى */}
+          <div className="container mx-auto">
+            {/* --- مثال لمحتوى الصفحة --- */}
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-6">
+              أهلاً بك، {currentUser.name}!
+            </h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+                <h2 className="text-lg font-semibold text-sky-600 dark:text-sky-400 mb-2">مهمة سريعة</h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">هنا يمكنك وضع محتوى تجريبي لبطاقة.</p>
+              </div>
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+                <h2 className="text-lg font-semibold text-emerald-600 dark:text-emerald-400 mb-2">إحصائيات</h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">عدد المستخدمين النشطين: 150</p>
+              </div>
+            </div>
+            {/* --- نهاية مثال محتوى الصفحة --- */}
+            {/* سيتم عرض مكونات الصفحات الفعلية هنا بواسطة React Router لاحقًا */}
           </div>
         </main>
       </div>
     </div>
   );
 }
+
 export default App;
