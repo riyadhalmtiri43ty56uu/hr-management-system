@@ -1,2 +1,54 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* For Webkit-based browsers (Chrome, Safari, Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px; /* عرض شريط التمرير */
+  height: 8px; /* ارتفاع شريط التمرير (للأفقي) */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  /* لا يوجد لون خلفية افتراضيًا (يأخذ لون العنصر) */
+  /* يمكنك إضافة لون إذا أردت */
+  /* background: transparent; */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* slate-300 */
+  border-radius: 10px;
+  border: 2px solid transparent; /* لإنشاء تأثير padding حول الـ thumb */
+  background-clip: content-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8; /* slate-400 */
+}
+
+/* الوضع الداكن لمتصفحات Webkit */
+.dark .custom-scrollbar-dark::-webkit-scrollbar-thumb {
+  background-color: #475569; /* slate-600 */
+}
+.dark .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b; /* slate-500 */
+}
+.dark .custom-scrollbar-dark::-webkit-scrollbar-track {
+   /* يمكنك إضافة لون خفيف للمسار في الوضع الداكن إذا أردت */
+   /* background-color: rgba(51, 65, 85, 0.5); slate-700/50 */
+}
+
+
+/* For Firefox */
+.custom-scrollbar-firefox {
+  scrollbar-width: thin; /* 'auto' or 'thin' */
+  scrollbar-color: #cbd5e1 transparent; /* thumb-color track-color */
+}
+.custom-scrollbar-firefox:hover {
+  /* لا يوجد selector مباشر لـ hover على الـ thumb في Firefox بهذه الطريقة */
+  /* يمكن تغيير الألوان بناءً على hover للعنصر نفسه إذا أردت */
+}
+
+/* الوضع الداكن لـ Firefox */
+.dark .custom-scrollbar-firefox-dark {
+  scrollbar-color: #475569 transparent; /* slate-600 thumb-color, transparent track-color */
+   /* أو يمكنك تحديد لون للمسار: */
+   /* scrollbar-color: #475569 rgba(51, 65, 85, 0.5); */
+}

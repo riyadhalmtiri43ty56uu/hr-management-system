@@ -1,81 +1,96 @@
 // src/App.jsx
-import React, { useState, useEffect } from 'react';
-import Navbar from './layouts/Navbar';
-import Sidebar from './layouts/Sidebar';
+import React, { useState, useEffect, Suspense } from 'react'; // Suspense if using lazy loading for translations
+import { Outlet } from 'react-router-dom';
+import Navbar from './components/layout/Navbar'; // تأكد من صحة المسار
+import Sidebar from './components/layout/Sidebar'; // تأكد من صحة المسار
+import { useTranslation } from 'react-i18next'; // لاستخدام i18n مباشرة
 
 function App() {
-  // --- الحالة العامة للتطبيق ---
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // للشاشات الكبيرة
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false); // للهواتف
+  const { i18n } = useTranslation(); // الحصول على i18n instance
 
-  // الوضع الداكن/الفاتح
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('darkMode');
-    if (savedMode !== null) {
-      return JSON.parse(savedMode);
-    }
-    // إذا لم يكن هناك وضع محفوظ، تحقق من تفضيلات النظام
+    if (savedMode !== null) return JSON.parse(savedMode);
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
-  // اللغة الحالية
-  const [currentLanguage, setCurrentLanguage] = useState(() => {
-    return localStorage.getItem('language') || 'ar'; // الافتراضي 'ar'
-  });
+  // currentLanguage الآن يُدار بواسطة i18next بشكل أساسي
+  // لكننا نحتفظ به في الحالة لإجبار إعادة العرض عند الحاجة (باستخدام key)
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'ar');
 
-  // --- التأثيرات الجانبية (Side Effects) ---
   useEffect(() => {
-    // تطبيق الوضع الداكن/الفاتح على <html>
     document.documentElement.classList.toggle('dark', isDarkMode);
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
 
-    // تطبيق اتجاه اللغة على <html>
-    document.documentElement.lang = currentLanguage;
-    document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
-    localStorage.setItem('language', currentLanguage);
+  useEffect(() => {
+    const handleLanguageChanged = (lng) => {
+      setCurrentLanguage(lng); // تحديث حالتنا المحلية
+      document.documentElement.lang = lng;
+      document.documentElement.dir = i18n.dir(lng); // استخدام i18n.dir(lng) لضمان الاتجاه الصحيح
+      localStorage.setItem('language', lng);
+    };
 
-  }, [isDarkMode, currentLanguage]);
+    // تطبيق الإعدادات الأولية
+    handleLanguageChanged(i18n.language);
+
+    i18n.on('languageChanged', handleLanguageChanged);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChanged);
+    };
+  }, [i18n]);
 
 
-  // --- دوال تبديل الحالة ---
   const toggleDarkMode = () => setIsDarkMode(prevMode => !prevMode);
   const toggleMainSidebar = () => setIsSidebarOpen(prevOpen => !prevOpen);
   const toggleMobileSidebar = () => setIsMobileSidebarOpen(prevOpen => !prevOpen);
 
   const switchLanguage = (lang) => {
-    setCurrentLanguage(lang);
-    // أغلق الشريط الجانبي للهاتف عند تغيير اللغة إذا كان مفتوحًا (اختياري)
-    if (isMobileSidebarOpen) {
-      setIsMobileSidebarOpen(false);
-    }
+    i18n.changeLanguage(lang).then(() => {
+      // setCurrentLanguage سيتم تحديثه عبر مستمع 'languageChanged'
+      if (isMobileSidebarOpen) {
+        setIsMobileSidebarOpen(false);
+      }
+    });
   };
 
   const handleLogout = () => {
     console.log("User logged out");
-    // TODO: Implement actual logout logic (clear token, redirect, etc.)
+    // TODO: Implement actual logout logic
   };
 
-  // --- بيانات وهمية للمستخدم (استبدلها ببيانات حقيقية من API) ---
   const currentUser = {
     name: "يوسف أحمد",
-    profileImageUrl: "/assets/images/avatar-placeholder.png", // ضع صورة في public/assets/images
-    logoUrl: "/assets/images/logo-placeholder.svg",       // ضع شعارًا في public/assets/images
-    roles: ['admin'] // مثال للأدوار
+    profileImageUrl: "/assets/images/avatar-placeholder.png",
+    logoUrl: "/assets/images/logo-placeholder.svg",
+    companyLogoShort: "/assets/images/logo-icon-placeholder.png", // افترض أن هذا موجود للشعار المصغر
+    roles: ['admin'],
+    is_staff: true, // أضف هذه الخصائص إذا كانت الشروط في Sidebar تعتمد عليها
+    is_superuser: false,
   };
 
   return (
-    <div className={`flex h-screen antialiased text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 overflow-hidden`}>
-      {/* Sidebar for larger screens (lg and up) */}
-      <div className="hidden lg:flex"> {/* استخدمنا flex هنا بدلًا من وضع fixed مباشرة في Sidebar */}
+    // إضافة key هنا لإجبار إعادة عرض App بالكامل عند تغيير اللغة
+    // هذا يساعد في تحديث أي عناصر تعتمد على الاتجاه (dir)
+    <div 
+      key={currentLanguage} // مفتاح مهم لإعادة العرض عند تغيير اللغة
+      className={`flex h-screen antialiased text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 overflow-hidden`}
+      dir={i18n.dir(currentLanguage)} // ضبط dir مباشرة هنا أيضًا
+    >
+      {/* Sidebar for larger screens */}
+      <div className="hidden lg:flex">
         <Sidebar
+          // إضافة key هنا أيضًا لضمان إعادة بناء Sidebar إذا لزم الأمر
+          key={`desktop-sidebar-${currentLanguage}`} 
           isOpen={isSidebarOpen}
           user={currentUser}
-          currentLanguage={currentLanguage}
-          // onToggle={toggleMainSidebar} // إذا كان زر التبديل داخل الشريط نفسه
         />
       </div>
 
-      {/* Mobile Sidebar (Overlay and Drawer) */}
+      {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
@@ -83,6 +98,7 @@ function App() {
           aria-hidden="true"
         ></div>
       )}
+      {/* Mobile Sidebar Drawer */}
       <div
         className={`fixed inset-y-0 z-40 flex w-64 transform flex-col bg-white dark:bg-slate-800 shadow-xl
                    transition-transform duration-300 ease-in-out lg:hidden
@@ -93,18 +109,19 @@ function App() {
                    }`}
       >
         <Sidebar
-          isOpen={true} // Mobile sidebar is always "fully open" in its container
+          // إضافة key هنا أيضًا
+          key={`mobile-sidebar-${currentLanguage}`}
+          isOpen={true} 
           user={currentUser}
           isMobileView={true}
-          currentLanguage={currentLanguage}
-          onLinkClick={toggleMobileSidebar} // لإغلاق الشريط عند النقر على رابط
+          onLinkClick={toggleMobileSidebar}
         />
       </div>
 
-      {/* Main Content Area (Navbar + Page Content) */}
+      {/* Main Content Area */}
       <div
         className={`flex-1 flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out
-                   lg:${currentLanguage === 'ar' ? (isSidebarOpen ? 'mr-64' : 'mr-20') : (isSidebarOpen ? 'ml-64' : 'ml-20')}`}
+                  lg:${currentLanguage === 'ar' ? (isSidebarOpen ? 'mr-64' : 'mr-20') : (isSidebarOpen ? 'ml-64' : 'ml-20')}`}
       >
         <Navbar
           onToggleMobileSidebar={toggleMobileSidebar}
@@ -116,26 +133,14 @@ function App() {
           switchLanguage={switchLanguage}
           user={currentUser}
           onLogout={handleLogout}
-          breadcrumb="لوحة التحكم" // سيتم تحديث هذا لاحقًا بـ React Router
+          // breadcrumb prop سيتم تحديثه لاحقًا بواسطة react-router أو context
         />
-        <main className="flex-1 p-4 sm:p-6 bg-slate-50 dark:bg-slate-800/50"> {/* ألوان خلفية أفتح للمحتوى */}
+        <main className="flex-1 p-4 sm:p-6 bg-slate-50 dark:bg-slate-800/50">
           <div className="container mx-auto">
-            {/* --- مثال لمحتوى الصفحة --- */}
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-6">
-              أهلاً بك، {currentUser.name}!
-            </h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-lg font-semibold text-sky-600 dark:text-sky-400 mb-2">مهمة سريعة</h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400">هنا يمكنك وضع محتوى تجريبي لبطاقة.</p>
-              </div>
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-lg font-semibold text-emerald-600 dark:text-emerald-400 mb-2">إحصائيات</h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400">عدد المستخدمين النشطين: 150</p>
-              </div>
-            </div>
-            {/* --- نهاية مثال محتوى الصفحة --- */}
-            {/* سيتم عرض مكونات الصفحات الفعلية هنا بواسطة React Router لاحقًا */}
+            {/* Suspense مطلوب إذا كنت تستخدم lazy loading للمسارات أو الترجمات */}
+            <Suspense fallback={<div>Loading page...</div>}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>
