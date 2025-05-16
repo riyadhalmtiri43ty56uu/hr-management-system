@@ -1,0 +1,789 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  // (اختياري) لتوليد الأنواع لـ Zod (إذا كنت ستستخدم Zod للتحقق)
+  // previewFeatures = ["zodPrisma"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- 1. النماذج الأساسية للمصادقة والصلاحيات ---
+
+model User {
+  id             String    @id @default(cuid())
+  username       String    @unique // اسم المستخدم لتسجيل الدخول
+  email          String    @unique
+  hashedPassword String    // كلمة المرور المجزأة (Hashed)
+  firstName      String?
+  lastName       String?
+  isActive       Boolean   @default(true)
+  isSuperuser    Boolean   @default(false) // إذا كان المستخدم هو المسؤول الأعلى للنظام
+  lastLogin      DateTime?
+  dateJoined     DateTime  @default(now())
+
+  roles          Role[]    // الأدوار المعينة للمستخدم
+
+  employee       Employee? // علاقة واحد-لواحد (اختيارية) مع الموظف
+  apiTokens      ApiToken[] // توكنات API المرتبطة بهذا المستخدم
+  notifications  Notification_Recipient[] @relation("RecipientNotifications") // الإشعارات المستلمة
+  createdNotifications Notification[] @relation("CreatorNotifications") // الإشعارات التي أنشأها
+
+  // حقول التدقيق المشتركة (يمكن إنشاؤها كـ mixin لاحقًا إذا دعم Prisma ذلك أو تضمينها)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  // createdById    String?   // ID للمستخدم الذي أنشأ هذا السجل (قد يكون معقدًا للمستخدم نفسه)
+  // modifiedById   String?
+  // createdBy      User?     @relation("CreatedRecords", fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  // modifiedBy     User?     @relation("ModifiedRecords", fields: [modifiedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  // recordsCreated User[]    @relation("CreatedRecords")
+  // recordsModified User[]   @relation("ModifiedRecords")
+
+  approvalsMade  Approval[] @relation("ApproverActions") // الموافقات التي قام بها هذا المستخدم
+
+  @@index([email])
+  @@index([username])
+  RoleAssignment RoleAssignment[]
+  Report Report[]
+}
+
+// الأدوار في النظام
+model RoleAssignment {
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  role   Role   // نوع الدور
+
+  @@unique([userId, role]) // لا يمكن تعيين نفس الدور للمستخدم مرتين
+}
+
+enum Role {
+  ADMIN          // مسؤول النظام (أعلى صلاحيات)
+  HR_MANAGER     // مدير موارد بشرية
+  DEPARTMENT_MANAGER // مدير قسم
+  EMPLOYEE       // موظف عادي
+  // أضف أدوارًا أخرى حسب الحاجة
+}
+
+// (اختياري) نموذج أكثر تفصيلاً للصلاحيات إذا احتجت لتجاوز نظام الأدوار البسيط
+// model Permission {
+//   id          String @id @default(cuid())
+//   name        String @unique // مثل "view_employee_salary", "edit_attendance_log"
+//   description String?
+//   // علاقة many-to-many مع الأدوار (أو مباشرة مع المستخدمين إذا أردت)
+// }
+
+model ApiToken {
+  id          String   @id @default(cuid())
+  token       String   @unique // التوكن الفعلي (قد يكون مجزأًا أيضًا للأمان)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  description String?  // لوصف استخدام التوكن (مثل "Mobile App Login")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// --- 2. نماذج الموظفين والأقسام والهيكل التنظيمي ---
+
+model Department {
+  id                  String    @id @default(cuid())
+  name                String    @unique // اسم القسم يجب أن يكون فريدًا
+  code                String?   @unique // كود القسم (اختياري ولكن مفيد)
+  description         String?
+  parentDepartmentId  String?   // للقسم الأعلى (هيكلية شجرية)
+  parentDepartment    Department? @relation("SubDepartments", fields: [parentDepartmentId], references: [id], onDelete: SetNull) // onDelete: SetNull إذا حذف القسم الأب، يصبح هذا القسم بدون أب
+  subDepartments      Department[] @relation("SubDepartments") // الأقسام الفرعية
+  managerId           String?   // ID لمدير القسم (من جدول Employee)
+  // manager             Employee? // (لا يمكن عمل علاقة ثنائية مباشرة هنا بسهولة، قد تحتاج لجدول وسيط أو تعيينها برمجيًا)
+
+  positions           Position[] // الوظائف داخل هذا القسم
+  employees           Employee[] // الموظفون في هذا القسم
+
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  // createdById         String?
+  // modifiedById        String?
+
+  @@index([name])
+}
+
+model Position {
+  id                String    @id @default(cuid())
+  title             String    // المسمى الوظيفي
+  code              String?   @unique // كود الوظيفة
+  description       String?
+  jobLevel          String?   // المستوى الوظيفي (مثل Junior, Senior, Lead)
+  departmentId      String
+  department        Department @relation(fields: [departmentId], references: [id], onDelete: Cascade) // الوظيفة تنتمي إلى قسم
+  baseSalaryMin     Decimal?  @db.Decimal(12, 2) // الحد الأدنى للراتب الأساسي
+  baseSalaryMax     Decimal?  @db.Decimal(12, 2) // الحد الأقصى
+
+  employees         Employee[] // الموظفون الذين يشغلون هذه الوظيفة
+
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  // createdById       String?
+  // modifiedById      String?
+
+  @@unique([title, departmentId]) // لا يمكن تكرار نفس المسمى الوظيفي في نفس القسم
+  @@index([title])
+}
+
+model Employee {
+  id                String     @id @default(cuid())
+  employeeCode      String     @unique // كود الموظف
+  firstName         String
+  middleName        String?
+  lastName          String
+  gender            Gender?
+  dateOfBirth       DateTime?  @db.Date // استخدام Date لنوع تاريخ فقط
+  nationality       String?
+  maritalStatus     MaritalStatus?
+  // email             String     @unique // البريد الإلكتروني الرئيسي عادة ما يكون في User model
+  phoneNumber       String?    @unique
+  address           String?
+  city              String?
+  country           String?
+  hireDate          DateTime   @db.Date
+  employmentType    EmploymentType? // (دوام كامل، جزئي، عقد)
+  status            EmployeeStatus @default(ACTIVE) // (نشط، في إجازة، مستقيل)
+  profilePictureUrl String?
+  jobTitleOverride  String?    // إذا كان المسمى الوظيفي يختلف عن مسمى Position الرسمي
+  experienceYears   Int?       // سنوات الخبرة
+  bio               String?    @db.Text // سيرة ذاتية أو ملاحظات
+
+  // --- العلاقات ---
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade) // كل موظف مرتبط بمستخدم
+  userId            String     @unique
+
+  department        Department @relation(fields: [departmentId], references: [id], onDelete:Restrict) // يجب أن يكون الموظف في قسم
+  departmentId      String
+
+  position          Position   @relation(fields: [positionId], references: [id], onDelete:Restrict) // يجب أن يكون للموظف منصب
+  positionId        String
+
+  managerId         String?    // ID للمدير المباشر (من جدول Employee)
+  manager           Employee?  @relation("DirectReports", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports     Employee[] @relation("DirectReports") // الموظفون الذين يديرهم هذا الموظف
+
+  // --- حقول مشتركة ---
+  isActive          Boolean    @default(true) // هل ملف الموظف نشط أم لا
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  // createdById       String?
+  // modifiedById      String?
+
+  // --- علاقات مع نماذج أخرى ---
+  attendanceLogs    AttendanceLog[]
+  leaveRequests     Leave[]
+  leaveBalances     EmployeeLeaveBalance[]
+  salaries          Salary[]
+  salarySlips       SalarySlip[]
+  employeeAllowances EmployeeAllowance[]
+  employeeTaxes     EmployeeTax[] // إذا كنت ستفصل ضرائب الموظف
+  assignedShifts    ShiftAssignment[] // الورديات المعينة للموظف
+  mobileDevices     MobileDevice[]  // الأجهزة المحمولة المسجلة للموظف
+  approvalsGiven    Approval[] @relation("EmployeeApprovals") // الموافقات التي أصدرها (إذا كان مديرًا)
+  notificationsSent Notification[] @relation("SenderNotifications") // الإشعارات التي أرسلها
+
+  @@index([employeeCode])
+  @@index([departmentId])
+  @@index([positionId])
+  @@index([managerId])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACTOR
+  INTERN
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_LEAVE
+  TERMINATED
+  RESIGNED
+  PROBATION
+}
+
+
+// --- 3. نماذج الحضور والانصراف ---
+
+model Shift {
+  id          String    @id @default(cuid())
+  name        String    @unique // مثل "الوردية الصباحية", "الوردية المسائية"
+  startTime   DateTime  @db.Time // وقت بدء الوردية (فقط الوقت)
+  endTime     DateTime  @db.Time // وقت انتهاء الوردية
+  description String?
+  
+  // (اختياري) أيام الأسبوع التي تنطبق عليها هذه الوردية
+  // monday      Boolean   @default(false)
+  // tuesday     Boolean   @default(false)
+  // ...الخ
+
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  assignedEmployees ShiftAssignment[]
+  attendanceLogs    AttendanceLog[]
+}
+
+model ShiftAssignment { // جدول وسيط لتعيين الورديات للموظفين (Many-to-Many)
+  id          String   @id @default(cuid())
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId  String
+  shift       Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shiftId     String
+  startDate   DateTime @db.Date // تاريخ بدء تعيين هذه الوردية للموظف
+  endDate     DateTime? @db.Date // تاريخ انتهاء التعيين (اختياري)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([employeeId, shiftId, startDate]) // لا يمكن تعيين نفس الوردية لنفس الموظف في نفس تاريخ البدء
+  @@index([employeeId])
+  @@index([shiftId])
+}
+
+model Location { // المواقع الجغرافية المسموح بها للحضور (لـ AttendanceScope)
+  id          String    @id @default(cuid())
+  name        String    // اسم الموقع (مثل "مبنى الإدارة الرئيسي")
+  address     String?
+  latitude    Float     @db.DoublePrecision
+  longitude   Float     @db.DoublePrecision
+  radius      Float     // نصف القطر المسموح به بالمتر
+
+  scopes      AttendanceScope[]
+
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model AttendanceScope { // نطاق الحضور (مجموعة من المواقع أو قواعد أخرى)
+  id          String    @id @default(cuid())
+  name        String    @unique // اسم النطاق (مثل "نطاق المكتب", "نطاق العمل عن بعد")
+  description String?
+  
+  locations   Location[] // المواقع المرتبطة بهذا النطاق (يمكن أن تكون علاقة many-to-many إذا كان الموقع يمكن أن يكون في أكثر من نطاق)
+  // أو يمكن أن تكون علاقة one-to-many إذا كان النطاق يحدد موقعًا واحدًا بقواعد
+
+  // (اختياري) قواعد أخرى مثل السماح بالـ IP
+  // allowedIpAddresses String[]
+
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model AttendanceLog {
+  id                  String    @id @default(cuid())
+  employee            Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId          String
+  shift               Shift?    @relation(fields: [shiftId], references: [id], onDelete: SetNull) // الوردية التي تم تسجيل الحضور فيها
+  shiftId             String?
+  
+  checkInTime         DateTime  // وقت تسجيل الدخول الفعلي
+  checkOutTime        DateTime? // وقت تسجيل الخروج الفعلي
+  
+  checkInLatitude     Float?    @db.DoublePrecision
+  checkInLongitude    Float?    @db.DoublePrecision
+  checkOutLatitude    Float?    @db.DoublePrecision
+  checkOutLongitude   Float?    @db.DoublePrecision
+  
+  isWithinScopeCheckIn  Boolean?  // هل كان تسجيل الدخول ضمن النطاق المسموح به
+  isWithinScopeCheckOut Boolean?  // هل كان تسجيل الخروج ضمن النطاق المسموح به
+  
+  status              AttendanceStatus @default(PRESENT) // (حاضر، غائب، متأخر، إذن)
+  notes               String?   @db.Text
+  
+  // (اختياري) معلومات إضافية
+  // deviceUsedCheckIn   String? // نوع الجهاز المستخدم لتسجيل الدخول
+  // ipAddressCheckIn    String?
+
+  createdAt           DateTime  @default(now()) // وقت إنشاء السجل (عادةً نفس checkInTime)
+  updatedAt           DateTime  @updatedAt
+
+  @@index([employeeId, checkInTime])
+  @@index([shiftId])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EARLY_LEAVE
+  ON_LEAVE
+  AUTHORIZED_ABSENCE // إذن أو غياب مبرر
+}
+
+
+// --- 4. نماذج إدارة الإجازات ---
+
+model LeaveType {
+  id                String    @id @default(cuid())
+  name              String    @unique // مثل "إجازة سنوية", "إجازة مرضية"
+  description       String?   @db.Text
+  maxDaysPerYear    Int?      // الحد الأقصى للأيام المسموح بها سنويًا (قد يكون null إذا كانت غير محدودة)
+  isCarryOverAllowed Boolean  @default(false) // هل يُسمح بترحيل الرصيد للسنة التالية
+  requiresAttachment Boolean @default(false) // هل يتطلب تقديم مرفق (مثل تقرير طبي)
+  
+  // (اختياري) قواعد أخرى
+  // minNoticeDays     Int?    // أقل عدد أيام يجب تقديم الطلب قبلها
+  
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  leaveRequests     Leave[]
+  employeeBalances  EmployeeLeaveBalance[]
+}
+
+model EmployeeLeaveBalance { // رصيد الإجازات لكل موظف لكل نوع إجازة
+  id            String    @id @default(cuid())
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId    String
+  leaveType     LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+  leaveTypeId   String
+  year          Int       // السنة التي ينطبق عليها هذا الرصيد
+  totalEntitled Float     // إجمالي الرصيد المستحق لهذه السنة (بالأيام)
+  taken         Float     @default(0) // الرصيد المأخوذ
+  remaining     Float     // الرصيد المتبقي (يمكن حسابه أو تخزينه)
+
+  // (اختياري) تفاصيل الترحيل
+  // carriedOverFromLastYear Float?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([employeeId, leaveTypeId, year]) // رصيد فريد لكل موظف ونوع إجازة وسنة
+  @@index([employeeId])
+  @@index([leaveTypeId])
+}
+
+model Leave {
+  id                String    @id @default(cuid())
+  employee          Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId        String
+  leaveType         LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Restrict)
+  leaveTypeId       String
+  
+  startDate         DateTime  @db.Date
+  endDate           DateTime  @db.Date
+  numberOfDays      Float     // عدد أيام الإجازة (يمكن حسابه)
+  reason            String    @db.Text
+  status            ApprovalStatus @default(PENDING) // (معلق، موافق عليه، مرفوض)
+  attachmentUrl     String?   // رابط للمرفق (إذا لزم الأمر)
+  
+  // (اختياري) ملاحظات المدير
+  // managerComments   String?   @db.Text
+
+  // --- حقول الموافقة (يمكن نقلها إلى جدول Approval إذا كان التدفق معقدًا) ---
+  // approvedById      String?   // ID المستخدم الذي وافق/رفض
+  // approver          User?     @relation("LeaveApprovals", fields: [approvedById], references: [id], onDelete: SetNull)
+  // approvalDate      DateTime?
+  
+  createdAt         DateTime  @default(now()) // تاريخ تقديم الطلب
+  updatedAt         DateTime  @updatedAt
+  // createdById       String?   // (عادةً الموظف نفسه)
+  // modifiedById      String?
+
+  approvals         Approval[] // سجل الموافقات على هذا الطلب
+
+  @@index([employeeId, startDate])
+  @@index([leaveTypeId])
+  @@index([status])
+}
+
+// --- 5. نماذج الرواتب ---
+// (هذا جزء معقد وقد يتطلب تفصيلاً أكبر حسب نظام الرواتب)
+
+model SalaryStructure { // هيكل الراتب للموظف أو للمنصب/الدرجة
+  id            String    @id @default(cuid())
+  name          String    @unique // مثل "هيكل رواتب المديرين", "هيكل الموظفين الجدد"
+  description   String?
+  
+  // (اختياري) يمكن ربطه بمنصب أو درجة وظيفية
+  // positionId    String?
+  // position      Position? @relation(fields: [positionId], references: [id])
+
+  // --- مكونات الراتب الأساسية في هذا الهيكل ---
+  // baseSalary    Decimal   @db.Decimal(12,2)
+  // allowances    Json?     //  [{"type": "housing", "amount": 500}, {"type": "transport", "percentage": 0.1}]
+  // deductions    Json?     //  [{"type": "loan", "amount": 100}]
+
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  salaries      Salary[]
+}
+
+
+model Salary { // سجل الراتب الحالي للموظف (قد يتغير بمرور الوقت)
+  id                String    @id @default(cuid())
+  employee          Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId        String    @unique // كل موظف له سجل راتب حالي واحد (أو يمكن جعله تاريخيًا)
+  
+  salaryStructure   SalaryStructure? @relation(fields: [salaryStructureId], references: [id], onDelete: SetNull)
+  salaryStructureId String?
+
+  baseSalary        Decimal   @db.Decimal(12, 2) // الراتب الأساسي الفعلي
+  effectiveDate     DateTime  @db.Date          // تاريخ سريان هذا الراتب
+  
+  // (اختياري) إذا لم تكن هناك هياكل رواتب مفصلة، يمكن إضافة البدلات والخصومات هنا مباشرة
+  // totalAllowances   Decimal?  @db.Decimal(12, 2)
+  // totalDeductions   Decimal?  @db.Decimal(12, 2)
+  // netSalary         Decimal?  @db.Decimal(12, 2) // يمكن حسابه
+
+  payFrequency      PayFrequency @default(MONTHLY) // (شهري، أسبوعي)
+
+  // --- حقول مشتركة ---
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  // createdById       String?
+  // modifiedById      String?
+
+  salarySlips       SalarySlip[]
+  employeeAllowances EmployeeAllowance[] // البدلات المخصصة لهذا الراتب/الموظف
+  employeeDeductions EmployeeDeduction[] // الخصومات المخصصة
+  employeeTaxes     EmployeeTax[]     // الضرائب المطبقة
+}
+
+enum PayFrequency {
+  MONTHLY
+  WEEKLY
+  BI_WEEKLY // كل أسبوعين
+}
+
+model AllowanceType { // أنواع البدلات (سكن، مواصلات، ...)
+  id            String    @id @default(cuid())
+  name          String    @unique
+  description   String?
+  isTaxable     Boolean   @default(false)
+  isPercentage  Boolean   @default(false) // هل هو نسبة من الراتب الأساسي أم مبلغ ثابت
+  
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  employeeAllowances EmployeeAllowance[]
+}
+
+model EmployeeAllowance { // بدلات محددة للموظف
+  id              String        @id @default(cuid())
+  salary          Salary        @relation(fields: [salaryId], references: [id], onDelete: Cascade)
+  salaryId        String
+  allowanceType   AllowanceType @relation(fields: [allowanceTypeId], references: [id], onDelete: Restrict)
+  allowanceTypeId String
+  amount          Decimal?      @db.Decimal(12, 2) // إذا لم يكن نسبة
+  percentage      Float?        // إذا كان نسبة
+  effectiveDate   DateTime      @db.Date
+  endDate         DateTime?     @db.Date
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@unique([salaryId, allowanceTypeId, effectiveDate])
+  @@index([salaryId])
+  @@index([allowanceTypeId])
+  Employee Employee[]
+}
+
+// نماذج مشابهة لـ DeductionType و EmployeeDeduction
+model DeductionType {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  description   String?
+  isPercentage  Boolean   @default(false)
+  
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  employeeDeductions EmployeeDeduction[]
+}
+
+model EmployeeDeduction {
+  id              String        @id @default(cuid())
+  salary          Salary        @relation(fields: [salaryId], references: [id], onDelete: Cascade)
+  salaryId        String
+  deductionType   DeductionType @relation(fields: [deductionTypeId], references: [id], onDelete: Restrict)
+  deductionTypeId String
+  amount          Decimal?      @db.Decimal(12, 2)
+  percentage      Float?
+  effectiveDate   DateTime      @db.Date
+  endDate         DateTime?     @db.Date
+  // (اختياري) معلومات إضافية مثل سبب الخصم
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@unique([salaryId, deductionTypeId, effectiveDate])
+  @@index([salaryId])
+  @@index([deductionTypeId])
+}
+
+// نماذج مشابهة لـ TaxType (أو TaxRule) و EmployeeTax
+model TaxRule { // قواعد الضرائب (قد تكون معقدة وتعتمد على البلد)
+  id            String    @id @default(cuid())
+  name          String    @unique // مثل "ضريبة الدخل 2024 - شريحة 1"
+  description   String?
+  countryCode   String?   // رمز البلد الذي تنطبق عليه القاعدة
+  minIncome     Decimal?  @db.Decimal(12, 2) // الحد الأدنى للدخل لتطبيق القاعدة
+  maxIncome     Decimal?  @db.Decimal(12, 2) // الحد الأقصى
+  taxRate       Float     // نسبة الضريبة
+  fixedAmount   Decimal?  @db.Decimal(12, 2) // مبلغ ثابت إضافي أو بدلاً من النسبة
+  
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  employeeTaxes EmployeeTax[]
+}
+
+model EmployeeTax {
+  id            String    @id @default(cuid())
+  salary        Salary    @relation(fields: [salaryId], references: [id], onDelete: Cascade)
+  salaryId      String
+  taxRule       TaxRule   @relation(fields: [taxRuleId], references: [id], onDelete: Restrict)
+  taxRuleId     String
+  // calculatedAmount Decimal @db.Decimal(12,2) // المبلغ المحسوب للضريبة (يمكن حسابه عند إنشاء قسيمة الراتب)
+  effectiveDate DateTime  @db.Date
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@unique([salaryId, taxRuleId, effectiveDate])
+  @@index([salaryId])
+  @@index([taxRuleId])
+  Employee Employee[]
+}
+
+
+model SalarySlip { // قسيمة الراتب
+  id                  String    @id @default(cuid())
+  employee            Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId          String
+  salary              Salary    @relation(fields: [salaryId], references: [id], onDelete: Restrict) // الراتب الذي تم بناءً عليه إنشاء هذه القسيمة
+  salaryId            String
+  
+  payPeriodStartDate  DateTime  @db.Date
+  payPeriodEndDate    DateTime  @db.Date
+  payDate             DateTime  @db.Date       // تاريخ الدفع الفعلي
+  
+  grossSalary         Decimal   @db.Decimal(12, 2) // إجمالي الراتب قبل الخصومات
+  totalAllowances     Decimal   @db.Decimal(12, 2)
+  totalDeductions     Decimal   @db.Decimal(12, 2)
+  totalTaxes          Decimal   @db.Decimal(12, 2)
+  netSalary           Decimal   @db.Decimal(12, 2) // صافي الراتب
+  
+  // (اختياري) تفاصيل إضافية كـ JSON أو حقول منفصلة
+  // allowancesBreakdown Json?
+  // deductionsBreakdown Json?
+  // taxesBreakdown      Json?
+  
+  status              PayslipStatus @default(GENERATED)
+  filePath            String?   // رابط لملف PDF لقسيمة الراتب
+  generatedOn         DateTime  @default(now())
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  // createdById         String?   // (عادةً النظام أو مسؤول الرواتب)
+  // modifiedById        String?
+
+  @@index([employeeId, payDate])
+  @@index([salaryId])
+}
+
+enum PayslipStatus {
+  GENERATED // تم إنشاؤه
+  PROCESSING // قيد المعالجة
+  PAID      // مدفوع
+  CANCELLED // ملغى
+}
+
+// --- 6. نماذج التقارير (قد يكون هذا مجرد سجل للتقارير المولدة) ---
+model Report {
+  id                String    @id @default(cuid())
+  reportType        String    // نوع التقرير (مثل "EmployeeList", "AttendanceSummary")
+  generatedOn       DateTime  @default(now())
+  generatedBy       User?     @relation(fields: [generatedById], references: [id], onDelete: SetNull)
+  generatedById     String?
+  parameters        Json?     // معلمات التقرير (مثل نطاق التاريخ، القسم)
+  filePath          String?   // رابط لملف التقرير (PDF, CSV)
+  description       String?   @db.Text
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// --- 7. نماذج الإشعارات ---
+model Notification {
+  id            String    @id @default(cuid())
+  title         String
+  message       String    @db.Text
+  type          NotificationType @default(INFO) // (معلوماتي، تحذير، خطأ، نجاح)
+  isRead        Boolean   @default(false) // هل قرأها المستلم الرئيسي (إذا كان هناك مستلم واحد)
+  
+  // (اختياري) رابط يتعلق بالإشعار
+  // linkTo        String?   // مثل /leave/requests/123
+
+  sender        Employee? @relation("SenderNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+  senderId      String?   // الموظف الذي أرسل الإشعار (قد يكون النظام)
+  
+  createdAt     DateTime  @default(now())
+  // createdById   String?   // المستخدم الذي تسبب في إنشاء الإشعار (إذا كان مختلفًا عن المرسل)
+
+  recipients    Notification_Recipient[] @relation("NotificationLinks")
+
+  User User[] @relation("CreatorNotifications")
+}
+
+model Notification_Recipient { // جدول وسيط لربط الإشعارات بالمستلمين (Many-to-Many)
+  id              String        @id @default(cuid())
+  notification    Notification  @relation("NotificationLinks", fields: [notificationId], references: [id], onDelete: Cascade)
+  notificationId  String
+  recipient       User          @relation("RecipientNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId     String
+  isRead          Boolean       @default(false)
+  readAt          DateTime?
+
+  @@unique([notificationId, recipientId])
+  @@index([recipientId, isRead])
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+  REMINDER
+}
+
+// --- 8. نماذج الموافقات (Approval Workflow) ---
+model Approval {
+  id            String    @id @default(cuid())
+  recordType    String    // نوع السجل الذي تتم الموافقة عليه (مثل "LeaveRequest", "ExpenseClaim")
+  recordId      String    // ID للسجل المرتبط
+  status        ApprovalStatus @default(PENDING)
+  comments      String?   @db.Text
+  
+  // من هو صاحب الطلب (الموظف)
+  requestedBy   Employee  @relation("EmployeeApprovals", fields: [requestedById], references: [id], onDelete: Cascade)
+  requestedById String
+
+  // من هو الذي يجب أن يوافق أو وافق/رفض
+  approver      User      @relation("ApproverActions", fields: [approverId], references: [id], onDelete: Restrict)
+  approverId    String
+  
+  actionDate    DateTime? // تاريخ اتخاذ إجراء الموافقة/الرفض
+  
+  // (اختياري) مستوى الموافقة في سير عمل متعدد المستويات
+  // approvalLevel Int?
+  // nextApproverId String?
+  // nextApprover   User? ...
+
+  createdAt     DateTime  @default(now()) // تاريخ إنشاء طلب الموافقة
+  updatedAt     DateTime  @updatedAt
+  // createdById   String?   // المستخدم الذي بدأ عملية الموافقة (قد يكون النظام)
+  // modifiedById  String?
+
+  @@index([recordType, recordId])
+  @@index([approverId, status])
+  @@index([requestedById])
+  Leave Leave[]
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+
+// --- 9. نماذج الأجهزة المحمولة (لتطبيق الهاتف) ---
+model MobileDevice {
+  id            String    @id @default(cuid())
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId    String
+  deviceToken   String    @unique // توكن الجهاز للإشعارات (FCM, APNS)
+  deviceType    DeviceType // (ANDROID, IOS)
+  osVersion     String?
+  appVersion    String?
+  lastLogin     DateTime?
+  
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([employeeId])
+}
+
+enum DeviceType {
+  ANDROID
+  IOS
+  WEB // (إذا كنت سترسل إشعارات ويب أيضًا)
+}
+
+// --- (اختياري) نموذج عام للسجلات (Audit Log) ---
+// model AuditLog {
+//   id          String   @id @default(cuid())
+//   timestamp   DateTime @default(now())
+//   userId      String?  // المستخدم الذي قام بالإجراء
+//   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+//   action      String   // (CREATE, UPDATE, DELETE, LOGIN, LOGOUT)
+//   entityType  String   // (Employee, Department, LeaveRequest)
+//   entityId    String?  // ID للكائن الذي تم التأثير عليه
+//   details     Json?    // تفاصيل التغييرات (مثل القيم القديمة والجديدة)
+//   ipAddress   String?
+//   userAgent   String?
+
+//   @@index([timestamp])
+//   @@index([userId])
+//   @@index([entityType, entityId])
+// }
+
+// --- (اختياري) نموذج للإعدادات العامة للنظام ---
+// model SystemSetting {
+//   id          String @id @default(cuid())
+//   key         String @unique // مثل "company_name", "default_currency", "leave_approval_workflow"
+//   value       String @db.Text
+//   description String?
+//   type        SettingType @default(STRING) // (STRING, NUMBER, BOOLEAN, JSON)
+
+//   updatedAt   DateTime @updatedAt
+// }
+
+// enum SettingType {
+//   STRING
+//   NUMBER
+//   BOOLEAN
+//   JSON
+// }

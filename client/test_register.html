@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test User Registration</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        label { display: block; margin-top: 10px; }
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 300px;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        #response { margin-top: 20px; padding: 10px; border: 1px solid #eee; background-color: #f9f9f9; white-space: pre-wrap; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Test User Registration</h1>
+    <form id="registerForm">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required minlength="6">
+        </div>
+        <div>
+            <label for="firstName">First Name (Optional):</label>
+            <input type="text" id="firstName" name="firstName">
+        </div>
+        <div>
+            <label for="lastName">Last Name (Optional):</label>
+            <input type="text" id="lastName" name="lastName">
+        </div>
+        <button type="submit">Register</button>
+    </form>
+
+    <h2>Response:</h2>
+    <pre id="response"></pre>
+
+    <script>
+        const form = document.getElementById('registerForm');
+        const responseDiv = document.getElementById('response');
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault(); // امنع الإرسال الافتراضي للنموذج
+
+            const formData = new FormData(form);
+            const userData = {};
+            formData.forEach((value, key) => {
+                // لا ترسل الحقول الاختيارية الفارغة
+                if (value.trim() !== '') {
+                    userData[key] = value;
+                }
+            });
+
+            responseDiv.textContent = 'Sending request...';
+            responseDiv.className = '';
+
+            try {
+                const response = await fetch('http://localhost:5001/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData),
+                });
+
+                const responseData = await response.json();
+                const responseText = await response.text(); // <-- اقرأ الرد كنص أولاً
+                console.log("Raw server response:", responseText); // اطبع الرد الخام للكونسول
+
+                    if (response.ok) {
+                        try {
+                            const responseData = JSON.parse(responseText); // حاول تحليله كـ JSON
+                            responseDiv.textContent = `Status: ${response.status}\n\n${JSON.stringify(responseData, null, 2)}`;
+                            responseDiv.classList.add('success');
+                            form.reset();
+                        } catch (jsonError) {
+                            console.error("JSON parsing error:", jsonError);
+                            responseDiv.textContent = `Status: ${response.status} (OK, but not valid JSON)\n\nResponse Text:\n${responseText}`;
+                            responseDiv.classList.add('error');
+                        }
+                    } else {
+                        responseDiv.textContent = `Error: ${response.status} ${response.statusText}\n\nResponse Text:\n${responseText}`;
+                        responseDiv.classList.add('error');
+                        // حاول تحليل الرد كـ JSON إذا كان خطأ مع هيئة JSON
+                        try {
+                            const errorData = JSON.parse(responseText);
+                            if (errorData.errors && Array.isArray(errorData.errors)) {
+                                let errorMessages = '\nValidation Errors:\n';
+                                errorData.errors.forEach(err => {
+                                    errorMessages += `- ${err.path}: ${err.message}\n`;
+                                });
+                                responseDiv.textContent += errorMessages;
+                            } else if (errorData.message) {
+                                responseDiv.textContent += `\nMessage: ${errorData.message}`;
+                            }
+                        } catch (e) { /* فشل تحليل JSON للخطأ، الرد كان HTML */ }
+                    }
+                } catch (error) {
+                console.error('Fetch error:', error);
+                responseDiv.textContent = `Fetch Error: ${error.message}\n\nCheck the browser console and ensure the server is running and accessible. CORS might be an issue if testing from a file:// URL directly without a local server for the HTML page.`;
+                responseDiv.classList.add('error');
+            }
+        });
+    </script>
+</body>
+</html>
