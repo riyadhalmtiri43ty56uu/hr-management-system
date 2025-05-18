@@ -61,6 +61,7 @@ model RoleAssignment {
 }
 
 enum Role {
+  USER
   ADMIN          // مسؤول النظام (أعلى صلاحيات)
   HR_MANAGER     // مدير موارد بشرية
   DEPARTMENT_MANAGER // مدير قسم
