@@ -63,15 +63,11 @@
         const responseDiv = document.getElementById('response');
 
         form.addEventListener('submit', async function(event) {
-            event.preventDefault(); // امنع الإرسال الافتراضي للنموذج
-
+            event.preventDefault();
             const formData = new FormData(form);
             const userData = {};
             formData.forEach((value, key) => {
-                // لا ترسل الحقول الاختيارية الفارغة
-                if (value.trim() !== '') {
-                    userData[key] = value;
-                }
+                if (value.trim() !== '') userData[key] = value;
             });
 
             responseDiv.textContent = 'Sending request...';
@@ -80,47 +76,40 @@
             try {
                 const response = await fetch('http://localhost:5001/api/auth/register', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(userData),
                 });
 
-                const responseData = await response.json();
-                const responseText = await response.text(); // <-- اقرأ الرد كنص أولاً
-                console.log("Raw server response:", responseText); // اطبع الرد الخام للكونسول
+                // --- ✅  التعديل الحاسم هنا ---
+                // لا تحاول قراءة .json() و .text() معًا على نفس كائن response.
+                // بما أنك تتوقع JSON من الخادم (وهو ما يرسله الآن)، استخدم .json() مباشرة.
+                const responseData = await response.json(); // اقرأ كـ JSON مرة واحدة
+                // ---------------------------------
 
-                    if (response.ok) {
-                        try {
-                            const responseData = JSON.parse(responseText); // حاول تحليله كـ JSON
-                            responseDiv.textContent = `Status: ${response.status}\n\n${JSON.stringify(responseData, null, 2)}`;
-                            responseDiv.classList.add('success');
-                            form.reset();
-                        } catch (jsonError) {
-                            console.error("JSON parsing error:", jsonError);
-                            responseDiv.textContent = `Status: ${response.status} (OK, but not valid JSON)\n\nResponse Text:\n${responseText}`;
-                            responseDiv.classList.add('error');
-                        }
-                    } else {
-                        responseDiv.textContent = `Error: ${response.status} ${response.statusText}\n\nResponse Text:\n${responseText}`;
-                        responseDiv.classList.add('error');
-                        // حاول تحليل الرد كـ JSON إذا كان خطأ مع هيئة JSON
-                        try {
-                            const errorData = JSON.parse(responseText);
-                            if (errorData.errors && Array.isArray(errorData.errors)) {
-                                let errorMessages = '\nValidation Errors:\n';
-                                errorData.errors.forEach(err => {
-                                    errorMessages += `- ${err.path}: ${err.message}\n`;
-                                });
-                                responseDiv.textContent += errorMessages;
-                            } else if (errorData.message) {
-                                responseDiv.textContent += `\nMessage: ${errorData.message}`;
-                            }
-                        } catch (e) { /* فشل تحليل JSON للخطأ، الرد كان HTML */ }
+                console.log("Parsed server response data:", responseData); // سجل البيانات المحللة
+
+                if (response.ok) { // Status code 200-299 (201 في حالتنا)
+                    responseDiv.textContent = `Status: ${response.status}\n\n${JSON.stringify(responseData, null, 2)}`;
+                    responseDiv.classList.add('success');
+                    form.reset();
+                } else {
+                    // إذا كان الرد خطأ ولكن لا يزال JSON (مثل أخطاء التحقق من الصحة من الخادم)
+                    responseDiv.textContent = `Error: ${response.status} ${response.statusText}\n\n${JSON.stringify(responseData, null, 2)}`;
+                    responseDiv.classList.add('error');
+                    if (responseData.errors && Array.isArray(responseData.errors)) {
+                        let errorMessages = '\nValidation Errors:\n';
+                        responseData.errors.forEach(err => {
+                            errorMessages += `- ${err.path}: ${err.message}\n`;
+                        });
+                        responseDiv.textContent += errorMessages;
+                    } else if (responseData.message) {
+                        responseDiv.textContent += `\nMessage: ${responseData.message}`;
                     }
-                } catch (error) {
-                console.error('Fetch error:', error);
-                responseDiv.textContent = `Fetch Error: ${error.message}\n\nCheck the browser console and ensure the server is running and accessible. CORS might be an issue if testing from a file:// URL directly without a local server for the HTML page.`;
+                }
+            } catch (error) {
+                // هذا الـ catch سيلتقط أخطاء الشبكة أو إذا فشل response.json() (لأن الرد لم يكن JSON صالحًا)
+                console.error('Fetch or JSON parsing error:', error);
+                responseDiv.textContent = `Error: ${error.message}\n\nCheck the browser console. The server might have responded with non-JSON content if there was an unhandled server error.`;
                 responseDiv.classList.add('error');
             }
         });

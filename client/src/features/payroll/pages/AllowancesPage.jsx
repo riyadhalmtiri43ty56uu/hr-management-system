@@ -1,6 +1,6 @@
 import React from 'react';
 
-const PayrollDashboardPage = () => {
+const AllowancesPage = () => {
   return (
     <div>
       <h1>النطاقات</h1>
@@ -9,4 +9,4 @@ const PayrollDashboardPage = () => {
   );
 };
 
-export default PayrollDashboardPage;
+export default AllowancesPage;

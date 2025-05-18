@@ -55,5 +55,38 @@
     "attendance_reports": "تقارير الحضور",
     "payroll_reports": "تقارير الرواتب",
     "leave_reports": "تقارير الإجازات"
+  },
+
+    "auth": {
+    "createAccount": "إنشاء حساب جديد",
+    "username": "اسم المستخدم",
+    "enterUsername": "أدخل اسم المستخدم الخاص بك",
+    "email": "البريد الإلكتروني",
+    "enterEmail": "أدخل بريدك الإلكتروني",
+    "password": "كلمة المرور",
+    "enterPassword": "أدخل كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "confirmYourPassword": "أكد كلمة المرور الخاصة بك",
+    "firstName": "الاسم الأول",
+    "enterFirstName": "أدخل اسمك الأول (اختياري)",
+    "lastName": "اسم العائلة",
+    "enterLastName": "أدخل اسم عائلتك (اختياري)",
+    "registerButton": "تسجيل",
+    "registering": "جاري التسجيل...",
+    "alreadyHaveAccount": "هل لديك حساب بالفعل؟",
+    "loginLink": "سجل الدخول من هنا",
+    "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين.",
+    "registrationSuccessMessage": "تم التسجيل بنجاح! يمكنك الآن تسجيل الدخول.",
+    "registrationFailed": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
+    "emailInUse": "هذا البريد الإلكتروني مستخدم بالفعل.",
+    "usernameInUse": "اسم المستخدم هذا مستخدم بالفعل.",
+    "networkError": "حدث خطأ في الشبكة. يرجى المحاولة مرة أخرى.",
+    "loginTitle": "تسجيل الدخول إلى حسابك",
+    "loginButton": "تسجيل الدخول",
+    "loggingIn": "جاري تسجيل الدخول...",
+    "forgotPasswordLink": "هل نسيت كلمة المرور؟",
+    "dontHaveAccount": "ليس لديك حساب؟",
+    "registerLink": "أنشئ حسابًا من هنا",
+    "invalidCredentials": "البريد الإلكتروني/اسم المستخدم أو كلمة المرور غير صحيحة."
   }
 }
