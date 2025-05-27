@@ -86,6 +86,7 @@
     "forgotPasswordLink": "Forgot password?",
     "dontHaveAccount": "Don't have an account?",
     "registerLink": "Sign up here",
-    "invalidCredentials": "Invalid email/username or password."
+    "invalidCredentials": "Invalid email/username or password.",
+    "enterEmailOrUsername": "Enter your email or username"
   }
 }

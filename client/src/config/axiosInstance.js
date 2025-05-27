@@ -27,7 +27,7 @@ axiosInstance.interceptors.request.use(
     // إذا كان التوكن موجودًا، قم بإضافته إلى header الـ Authorization
     if (token) {
       // تأكد من استخدام الصيغة الصحيحة (Bearer, Token, ...) حسب طريقة مصادقة الخادم
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`; // يضيفه إلى header
     }
 
     // إعادة كائن الإعدادات المعدل

@@ -87,6 +87,7 @@
     "forgotPasswordLink": "هل نسيت كلمة المرور؟",
     "dontHaveAccount": "ليس لديك حساب؟",
     "registerLink": "أنشئ حسابًا من هنا",
-    "invalidCredentials": "البريد الإلكتروني/اسم المستخدم أو كلمة المرور غير صحيحة."
+    "invalidCredentials": "البريد الإلكتروني/اسم المستخدم أو كلمة المرور غير صحيحة.",
+    "enterEmailOrUsername": "ادخل اسم المستخدم او البريد الالكتروني"
   }
 }
