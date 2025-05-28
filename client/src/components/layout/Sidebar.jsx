@@ -232,7 +232,12 @@ const menuConfig = [
     icon: FaUsersCog,
     path: "#users",
     // ✅  استخدام user.roles للتحقق من الدور
-    // condition: (user) => user && user.roles && (user.is_superuser || user.roles.includes('HR_MANAGER') || user.roles.includes('ADMIN')),
+    condition: (user) =>
+      user &&
+      user.roles &&
+      (user.is_superuser ||
+        user.roles.includes("HR_MANAGER") ||
+        user.roles.includes("ADMIN")),
     subItems: [
       {
         id: "users_assign_group",
@@ -240,7 +245,10 @@ const menuConfig = [
         icon: FaUsersCog,
         path: "/users/assign-group",
         end: true,
-        // condition: (user) => user && user.roles && (user.is_superuser || user.roles.includes('ADMIN')) // مثال آخر
+        condition: (user) =>
+          user &&
+          user.roles &&
+          (user.is_superuser || user.roles.includes("ADMIN")), // مثال آخر
       },
       {
         id: "users_permissions",
@@ -248,7 +256,7 @@ const menuConfig = [
         icon: FaUserLock,
         path: "/users/permissions",
         end: true,
-        // condition: (user) => user?.is_superuser
+        condition: (user) => user?.is_superuser,
       },
     ],
   },

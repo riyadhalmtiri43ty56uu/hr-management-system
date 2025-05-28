@@ -20,7 +20,7 @@
     "addNew": "Add New"
   },
 
-    "sidebar": {
+  "sidebar": {
     "menu": "Menu",
     "companyLogoAlt": "Company Logo",
     "userAvatarAlt": "User Avatar",
@@ -56,7 +56,7 @@
     "leave_reports": "Leave Reports"
   },
 
-    "auth": {
+  "auth": {
     "createAccount": "Create a New Account",
     "username": "Username",
     "enterUsername": "Enter your username",
@@ -88,5 +88,24 @@
     "registerLink": "Sign up here",
     "invalidCredentials": "Invalid email/username or password.",
     "enterEmailOrUsername": "Enter your email or username"
-  }
+  },
+
+  "employees": {
+    "employeeListTitle": "Employee List",
+    "errorFetching": "Error fetching employees.",
+    "errorFetchingNetwork": "Network error while fetching employees.",
+    "noEmployeesFound": "No employees found.",
+    "table": {
+      "name": "Name",
+      "employeeId": "Employee ID",
+      "position": "Position",
+      "department": "Department",
+      "email": "Email",
+      "status": "Status"
+    }
+  },
+  "loading": "Loading...",
+  "active": "Active",
+  "inactive": "Inactive",
+  "error": "Error"
 }

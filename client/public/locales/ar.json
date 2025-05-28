@@ -57,7 +57,7 @@
     "leave_reports": "تقارير الإجازات"
   },
 
-    "auth": {
+  "auth": {
     "createAccount": "إنشاء حساب جديد",
     "username": "اسم المستخدم",
     "enterUsername": "أدخل اسم المستخدم الخاص بك",
@@ -89,5 +89,24 @@
     "registerLink": "أنشئ حسابًا من هنا",
     "invalidCredentials": "البريد الإلكتروني/اسم المستخدم أو كلمة المرور غير صحيحة.",
     "enterEmailOrUsername": "ادخل اسم المستخدم او البريد الالكتروني"
-  }
+  },
+
+  "employees": {
+    "employeeListTitle": "قائمة الموظفين",
+    "errorFetching": "خطأ في جلب بيانات الموظفين.",
+    "errorFetchingNetwork": "خطأ في الشبكة أثناء جلب الموظفين.",
+    "noEmployeesFound": "لم يتم العثور على موظفين.",
+    "table": {
+      "name": "الاسم",
+      "employeeId": "الرقم الوظيفي",
+      "position": "المنصب",
+      "department": "القسم",
+      "email": "البريد الإلكتروني",
+      "status": "الحالة"
+    }
+  },
+  "loading": "جاري التحميل...",
+  "active": "نشط",
+  "inactive": "غير نشط",
+  "error": "خطأ"
 }
