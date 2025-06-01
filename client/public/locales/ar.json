@@ -92,6 +92,12 @@
   },
 
   "employees": {
+    "addSuccess": "تمت إضافة الموظف بنجاح!",
+    "updateSuccess": "تم تحديث الموظف بنجاح!",
+    "errorAdding": "حدث خطأ أثناء إضافة الموظف.",
+    "errorUpdating": "حدث خطأ أثناء تحديث الموظف.",
+    "addEmployeeTitle": "إضافة موظف جديد",
+    "editEmployeeTitle": "تعديل الموظف: {{name}}",
     "employeeListTitle": "قائمة الموظفين",
     "errorFetching": "خطأ في جلب بيانات الموظفين.",
     "errorFetchingNetwork": "خطأ في الشبكة أثناء جلب الموظفين.",
@@ -103,10 +109,83 @@
       "department": "القسم",
       "email": "البريد الإلكتروني",
       "status": "الحالة"
+    },
+    "form": {
+      "userInfo": "معلومات حساب المستخدم",
+      "employeeInfo": "تفاصيل الموظف",
+      "employeeCode": "كود الموظف",
+      "phoneNumber": "رقم الهاتف",
+      "hireDate": "تاريخ التوظيف",
+      "selectDepartment": "اختر القسم",
+      "selectPosition": "اختر المنصب",
+      "addEmployeeButton": "إضافة هذا الموظف",
+      "saveChangesButton": "حفظ التغييرات",
+      "middleName": "الاسم الأوسط",
+      "gender": "الجنس",
+      "selectGender": "-- اختر الجنس --",
+      "dateOfBirth": "تاريخ الميلاد",
+      "nationality": "الجنسية",
+      "maritalStatus": "الحالة الاجتماعية",
+      "selectMaritalStatus": "-- اختر الحالة الاجتماعية --",
+      "address": "العنوان",
+      "city": "المدينة",
+      "country": "الدولة",
+      "employmentType": "نوع التوظيف",
+      "selectEmploymentType": "-- اختر النوع --",
+      "jobInfo": "معلومات الوظيفة",
+      "manager": "المدير المباشر",
+      "selectManager": "اختر المدير (اختياري)",
+      "jobTitleOverride": "تعديل المسمى الوظيفي",
+      "additionalInfo": "معلومات إضافية",
+      "experienceYears": "سنوات الخبرة",
+      "profilePicture": "الصورة الشخصية",
+      "bio": "نبذة / ملاحظات"
     }
   },
+
+  "enums": {
+    "gender": {
+      "male": "ذكر",
+      "female": "أنثى",
+      "other": "آخر"
+    },
+    "maritalStatus": {
+      "single": "أعزب",
+      "married": "متزوج",
+      "divorced": "مطلّق",
+      "widowed": "أرمل"
+    },
+    "employmentType": {
+      "full_time": "دوام كامل",
+      "part_time": "دوام جزئي",
+      "contractor": "متعاقد",
+      "intern": "متدرب"
+    },
+    "employeeStatus": {
+      "active": "نشط",
+      "on_leave": "في إجازة",
+      "terminated": "مُنهِي الخدمة",
+      "resigned": "مستقيل",
+      "probation": "تحت التجربة"
+    }
+  },
+
+  "validation": {
+    "required": "حقل {{field}} مطلوب.",
+    "invalidEmail": "يرجى إدخال بريد إلكتروني صالح.",
+    "minLength": "يجب أن يحتوي {{field}} على الأقل على {{count}} حروف."
+  },
+
   "loading": "جاري التحميل...",
   "active": "نشط",
   "inactive": "غير نشط",
-  "error": "خطأ"
+  "error": "خطأ",
+  "cancel": "إلغاء",
+  "saving": "جاري الحفظ...",
+  "tryAgain": "حاول مرة أخرى",
+  "actions": "الإجراءات",
+  "viewDetails": "عرض التفاصيل",
+  "edit": "تعديل",
+  "delete": "حذف",
+  "searchPlaceholder": "ابحث عن موظفين..."
 }

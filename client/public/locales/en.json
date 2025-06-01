@@ -91,6 +91,12 @@
   },
 
   "employees": {
+    "addSuccess": "Employee added successfully!",
+    "updateSuccess": "Employee updated successfully!",
+    "errorAdding": "Error adding employee.",
+    "errorUpdating": "Error updating employee.",
+    "addEmployeeTitle": "Add New Employee",
+    "editEmployeeTitle": "Edit Employee: {{name}}",
     "employeeListTitle": "Employee List",
     "errorFetching": "Error fetching employees.",
     "errorFetchingNetwork": "Network error while fetching employees.",
@@ -102,10 +108,83 @@
       "department": "Department",
       "email": "Email",
       "status": "Status"
+    },
+    "form": {
+      "userInfo": "User Account Information",
+      "employeeInfo": "Employee Details",
+      "employeeCode": "Employee Code",
+      "phoneNumber": "Phone Number",
+      "hireDate": "Hire Date",
+      "selectDepartment": "Select Department",
+      "selectPosition": "Select Position",
+      "addEmployeeButton": "Add This Employee",
+      "saveChangesButton": "Save Changes",
+      "middleName": "Middle Name",
+      "gender": "Gender",
+      "selectGender": "-- Select Gender --",
+      "dateOfBirth": "Date of Birth",
+      "nationality": "Nationality",
+      "maritalStatus": "Marital Status",
+      "selectMaritalStatus": "-- Select Marital Status --",
+      "address": "Address",
+      "city": "City",
+      "country": "Country",
+      "employmentType": "Employment Type",
+      "selectEmploymentType": "-- Select Type --",
+      "jobInfo": "Job Information",
+      "manager": "Direct Manager",
+      "selectManager": "Select Manager (Optional)",
+      "jobTitleOverride": "Job Title Override",
+      "additionalInfo": "Additional Information",
+      "experienceYears": "Years of Experience",
+      "profilePicture": "Profile Picture",
+      "bio": "Bio / Notes"
     }
   },
+
+  "enums": {
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "maritalStatus": {
+      "single": "Single",
+      "married": "Married",
+      "divorced": "Divorced",
+      "widowed": "Widowed"
+    },
+    "employmentType": {
+      "full_time": "Full-time",
+      "part_time": "Part-time",
+      "contractor": "Contractor",
+      "intern": "Intern"
+    },
+    "employeeStatus": {
+      "active": "Active",
+      "on_leave": "On Leave",
+      "terminated": "Terminated",
+      "resigned": "Resigned",
+      "probation": "Probation"
+    }
+  },
+
+  "validation": {
+    "required": "{{field}} is required.",
+    "invalidEmail": "Please enter a valid email address.",
+    "minLength": "{{field}} must be at least {{count}} characters long."
+  },
+
   "loading": "Loading...",
   "active": "Active",
   "inactive": "Inactive",
-  "error": "Error"
+  "error": "Error",
+  "cancel": "Cancel",
+  "saving": "Saving...",
+  "tryAgain": "Try Again",
+  "actions": "Actions",
+  "viewDetails": "View Details",
+  "edit": "Edit",
+  "delete": "Delete",
+  "searchPlaceholder": "Search employees..."
 }

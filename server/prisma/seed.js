@@ -46,6 +46,50 @@ async function main() {
     `Created/Found position: ${position1.title} (ID: ${position1.id})`
   );
 
+  // --- إنشاء قسم آخر ---
+  const department2 = await prisma.department.upsert({
+    where: { name: "Human Resources" },
+    update: {},
+    create: { name: "Human Resources", code: "HR", isActive: true },
+  });
+  console.log(`Created/Found department: ${department2.name}`);
+
+  // --- إنشاء وظيفة أخرى في قسم الموارد البشرية ---
+  const position2 = await prisma.position.upsert({
+    where: {
+      title_departmentId: {
+        title: "HR Specialist",
+        departmentId: department2.id,
+      },
+    },
+    update: {},
+    create: {
+      title: "HR Specialist",
+      code: "HRS001",
+      departmentId: department2.id,
+      isActive: true,
+    },
+  });
+  console.log(`Created/Found position: ${position2.title}`);
+
+  // --- إنشاء وظيفة أخرى في قسم تكنولوجيا المعلومات ---
+  const position3 = await prisma.position.upsert({
+    where: {
+      title_departmentId: {
+        title: "IT Support Specialist",
+        departmentId: department1.id,
+      },
+    }, // department1 هو قسم IT
+    update: {},
+    create: {
+      title: "IT Support Specialist",
+      code: "ITS001",
+      departmentId: department1.id,
+      isActive: true,
+    },
+  });
+  console.log(`Created/Found position: ${position3.title}`);
+
   // --- 3. إنشاء مستخدم (User) ليكون موظفًا ---
   const userPassword = "password123";
   const hashedUserPassword = await bcrypt.hash(userPassword, 10);
