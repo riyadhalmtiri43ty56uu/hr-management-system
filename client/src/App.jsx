@@ -1,12 +1,16 @@
 // src/App.jsx
 import React, { useState, useEffect, Suspense } from 'react'; // Suspense if using lazy loading for translations
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Navbar from './components/layout/Navbar'; // تأكد من صحة المسار
 import Sidebar from './components/layout/Sidebar'; // تأكد من صحة المسار
 import { useTranslation } from 'react-i18next'; // لاستخدام i18n مباشرة
+import { useAuth } from './contexts/AuthContext'; // <-- استيراد useAuth
 
 function App() {
   const { i18n } = useTranslation(); // الحصول على i18n instance
+  // <-- الحصول على user و logout و isAuthenticated
+  const { user, logout: contextLogout } = useAuth();
+  const navigate = useNavigate();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -43,6 +47,28 @@ function App() {
     };
   }, [i18n]);
 
+  const handleLogout = async () => {
+    console.log("App.jsx: Initiating logout...");
+    try {
+      // (اختياري) يمكنك استدعاء API لتسجيل الخروج من الخادم هنا إذا كان لديك
+      // await axiosInstance.post('/auth/logout');
+      contextLogout(); // استدعاء دالة logout من AuthContext
+      navigate('/login'); // توجيه المستخدم إلى صفحة تسجيل الدخول
+      console.log("App.jsx: Logout successful, navigated to /login");
+    
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // يمكنك عرض رسالة خطأ للمستخدم إذا فشل استدعاء API للخادم
+    }
+  };
+
+  const currentUser = user;
+    // إذا لم يكن المستخدم مصادقًا عليه (يجب ألا يصل إلى هنا إذا كان ProtectedRoute يعمل بشكل صحيح)
+    // ولكن كإجراء احترازي إضافي
+  // if (!isAuthenticated && !isLoadingAuth) { // isLoadingAuth من useAuth
+  //    // قد لا تحتاج لهذا إذا كان ProtectedRoute يعتني به، لكنه لا يضر
+  //    // return <Navigate to="/login" replace />;
+  // }
 
   const toggleDarkMode = () => setIsDarkMode(prevMode => !prevMode);
   const toggleMainSidebar = () => setIsSidebarOpen(prevOpen => !prevOpen);
@@ -57,20 +83,17 @@ function App() {
     });
   };
 
-  const handleLogout = () => {
-    console.log("User logged out");
-    // TODO: Implement actual logout logic
-  };
 
-  const currentUser = {
-    name: "يوسف أحمد",
-    profileImageUrl: "/assets/images/avatar-placeholder.png",
-    logoUrl: "/assets/images/logo-placeholder.svg",
-    companyLogoShort: "/assets/images/logo-icon-placeholder.png", // افترض أن هذا موجود للشعار المصغر
-    roles: ['admin'],
-    is_staff: true, // أضف هذه الخصائص إذا كانت الشروط في Sidebar تعتمد عليها
-    is_superuser: false,
-  };
+
+  // const currentUser = {
+  //   name: "يوسف أحمد",
+  //   profileImageUrl: "/assets/images/avatar-placeholder.png",
+  //   logoUrl: "/assets/images/logo-placeholder.svg",
+  //   companyLogoShort: "/assets/images/logo-icon-placeholder.png", // افترض أن هذا موجود للشعار المصغر
+  //   roles: ['admin'],
+  //   is_staff: true, // أضف هذه الخصائص إذا كانت الشروط في Sidebar تعتمد عليها
+  //   is_superuser: false,
+  // };
 
   return (
     // إضافة key هنا لإجبار إعادة عرض App بالكامل عند تغيير اللغة
@@ -131,8 +154,8 @@ function App() {
           toggleDarkMode={toggleDarkMode}
           currentLanguage={currentLanguage}
           switchLanguage={switchLanguage}
-          user={currentUser}
-          onLogout={handleLogout}
+          user={currentUser} // تمرير المستخدم الحالي
+          onLogout={handleLogout} // تمرير دالة تسجيل الخروج الجديدة
           // breadcrumb prop سيتم تحديثه لاحقًا بواسطة react-router أو context
         />
         <main className="flex-1 p-4 sm:p-6 bg-slate-50 dark:bg-slate-800/50">

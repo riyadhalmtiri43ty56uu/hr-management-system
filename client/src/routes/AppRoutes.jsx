@@ -3,6 +3,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import App from '../App'; // <-- استيراد App هنا
+import RegisterPage from '../features/auth/pages/RegisterPage';
 
 // استيراد مكونات الصفحات (كما هي)
 import DashboardPage from '../features/dashboard/pages/DashboardPage';
@@ -39,6 +40,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} /> {/* <-- إضافة مسار التسجيل */}
       
       <Route path="/" element={
         <ProtectedRoute>
