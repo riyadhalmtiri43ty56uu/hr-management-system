@@ -89,7 +89,7 @@
     "invalidCredentials": "Invalid email/username or password.",
     "enterEmailOrUsername": "Enter your email or username"
   },
-
+  "search": "Search",
   "employees": {
     "addSuccess": "Employee added successfully!",
     "updateSuccess": "Employee updated successfully!",
@@ -101,6 +101,8 @@
     "errorFetching": "Error fetching employees.",
     "errorFetchingNetwork": "Network error while fetching employees.",
     "noEmployeesFound": "No employees found.",
+    "searchPlaceholder": "Search by name, code, email...",
+    "addEmployee": "add Employee",
     "table": {
       "name": "Name",
       "employeeId": "Employee ID",
@@ -138,7 +140,8 @@
       "additionalInfo": "Additional Information",
       "experienceYears": "Years of Experience",
       "profilePicture": "Profile Picture",
-      "bio": "Bio / Notes"
+      "bio": "Bio / Notes",
+      "selectPositionFirst": "select Position First"
     }
   },
 
@@ -172,7 +175,11 @@
   "validation": {
     "required": "{{field}} is required.",
     "invalidEmail": "Please enter a valid email address.",
-    "minLength": "{{field}} must be at least {{count}} characters long."
+    "minLength": "{{field}} must be at least {{count}} characters long.",
+    "mustBeNumber": "{{field}} must be a number.",
+    "minMaxSalary": "Max salary must be greater than or equal to min salary.",
+    "positiveNumber": "{{field}} must be a positive number.",
+    "invalidUrl": "Invalid URL format."
   },
 
   "loading": "Loading...",
@@ -186,5 +193,79 @@
   "viewDetails": "View Details",
   "edit": "Edit",
   "delete": "Delete",
-  "searchPlaceholder": "Search employees..."
+  "searchPlaceholder": "Search employees...",
+
+  "departments": {
+    "departmentListTitle": "Departments Management",
+    "addDepartmentButton": "Add New Department",
+    "addDepartmentTitle": "Add New Department",
+    "editDepartmentTitle": "Edit Department: {{name}}",
+    "confirmDelete": "Are you sure you want to mark department '{{name}}' as inactive?",
+    "deleteSuccess": "Department marked as inactive successfully.",
+    "errorDeleting": "Error marking department as inactive.",
+    "addSuccess": "Department added successfully!",
+    "updateSuccess": "Department updated successfully!",
+    "errorAdding": "Error adding department.",
+    "errorUpdating": "Error updating department.",
+    "noDepartmentsFound": "No departments found.",
+    "form": {
+      "name": "Department Name",
+      "code": "Department Code (Optional)",
+      "description": "Description (Optional)",
+      "parentDepartment": "Parent Department (Optional)",
+      "selectParentOptional": "-- No Parent (Root Level) --",
+      "manager": "Department Manager (Optional)",
+      "selectManagerOptional": "-- No Manager Assigned --",
+      "isActive": "Active Department",
+      "addDepartmentButton": "Add Department",
+      "saveChangesButton": "Save Changes"
+    },
+    "table": {
+      "name": "Name",
+      "code": "Code",
+      "parentDepartment": "Parent Department",
+      "employeesCount": "Employees",
+      "positionsCount": "Positions",
+      "status": "Status"
+    }
+  },
+  "positions": {
+    "positionListTitle": "Positions List",
+    "addPositionButton": "Add New Position",
+    "noPositionsFound": "No positions found.",
+    "errorFetching": "Error fetching positions.",
+    "errorFetchingNetwork": "Network error while fetching positions.",
+    "addSuccess": "Position added successfully!",
+    "updateSuccess": "Position updated successfully!",
+    "deleteSuccess": "Position marked as inactive successfully.",
+    "errorAdding": "Error adding position.",
+    "errorUpdating": "Error updating position.",
+    "errorDeleting": "Error marking position as inactive.",
+    "confirmDelete": "Are you sure you want to mark position \"{{title}}\" as inactive?",
+    "addPositionTitle": "Add New Position",
+    "editPositionTitle": "Edit Position: {{title}}",
+    "form": {
+      "title": "Position Title",
+      "code": "Position Code (Optional)",
+      "description": "Description (Optional)",
+      "selectDepartment": "-- Select Department --",
+      "jobLevel": "Job Level (Optional)",
+      "baseSalaryMin": "Base Salary (Min, Optional)",
+      "baseSalaryMax": "Base Salary (Max, Optional)",
+      "isActive": "Active Position",
+      "saveChangesButton": "Save Changes"
+    },
+    "table": {
+      "title": "Title",
+      "code": "Code"
+    }
+  },
+  "pagination": {
+    "page": "Page {{currentPage}} of {{totalPages}}",
+    "totalRecords": "Total: {{totalRecords}} records",
+    "firstPage": "First Page",
+    "previousPage": "Previous Page",
+    "nextPage": "Next Page",
+    "lastPage": "Last Page"
+  }
 }
