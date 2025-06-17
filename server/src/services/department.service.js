@@ -288,8 +288,6 @@ export const deleteDepartmentService = async (departmentId) => {
   }
 };
 
-// ... (باقي خدمات CRUD للأقسام يمكنك إضافتها لاحقًا) ...
-
 // (لاحقًا) يمكنك إضافة خدمات أخرى مثل:
 // export const createDepartmentService = async (departmentData) => { ... };
 // export const getDepartmentByIdService = async (departmentId) => { ... };

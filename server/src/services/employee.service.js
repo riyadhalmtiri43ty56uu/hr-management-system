@@ -21,6 +21,14 @@ export const getAllEmployeesService = async (queryOptions = {}) => {
     sortBy = "createdAt", // عمود الفرز الافتراضي
     sortOrder = "desc", // اتجاه الفرز الافتراضي (desc = تنازلي, asc = تصاعدي)
     search = "", // مصطلح البحث
+
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    departmentId,
+    positionId,
+    status,
     // يمكنك إضافة فلاتر أخرى هنا مثل departmentId, positionId, status, etc.
     // departmentId = '',
     // positionId = '',
@@ -51,6 +59,21 @@ export const getAllEmployeesService = async (queryOptions = {}) => {
       // { department: { name: { contains: search, mode: 'insensitive' } } },
     ];
   }
+
+  if (firstName)
+    whereConditions.firstName = { contains: firstName, mode: "insensitive" };
+  if (lastName)
+    whereConditions.lastName = { contains: lastName, mode: "insensitive" };
+  if (email)
+    whereConditions.user = { email: { contains: email, mode: "insensitive" } }; //  <-- تصفية ببريد المستخدم
+  if (phoneNumber)
+    whereConditions.phoneNumber = {
+      contains: phoneNumber,
+      mode: "insensitive",
+    };
+  if (departmentId) whereConditions.departmentId = departmentId;
+  if (positionId) whereConditions.positionId = positionId;
+  if (status) whereConditions.status = status;
 
   // بناء شرط OrderBy للفرز
   const orderByConditions = {};
