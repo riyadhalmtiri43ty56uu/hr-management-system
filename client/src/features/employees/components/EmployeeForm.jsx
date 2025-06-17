@@ -87,9 +87,9 @@ const EmployeeForm = ({
     const fetchDropdownData = async () => {
       setIsDropdownLoading(true);
       try {
-        const [deptsRes, posRes, empsRes] = await Promise.all([
+        const [deptsRes, empsRes] = await Promise.all([
           axiosInstance.get("/departments/for-select"),
-          axiosInstance.get("/positions/for-select"), // يمكنك تصفيتها لاحقًا بـ departmentId
+          // axiosInstance.get("/positions/for-select"), // يمكنك تصفيتها لاحقًا بـ departmentId
           axiosInstance.get(
             "/employees/for-manager-select" +
               (initialData?.id ? `?excludeId=${initialData.id}` : "")
@@ -102,12 +102,12 @@ const EmployeeForm = ({
             ...deptsRes.data.data,
           ]);
         }
-        if (posRes.data.success) {
-          setPositions([
-            { id: "", name: t("employees.form.selectPosition") },
-            ...posRes.data.data,
-          ]);
-        }
+        // if (posRes.data.success) {
+        //   setPositions([
+        //     { id: "", name: t("employees.form.selectPosition") },
+        //     ...posRes.data.data.map((pos) => ({ id: pos.id, name: pos.title })),
+        //   ]);
+        // }
         if (empsRes.data.success) {
           const potentialManagers = empsRes.data.data.filter(
             (emp) => emp.id !== initialData?.id
@@ -135,6 +135,51 @@ const EmployeeForm = ({
     fetchDropdownData();
   }, [t, initialData?.id]); // أعد الجلب إذا تغير الموظف المعدل (لتحديث قائمة المديرين)
 
+  // useEffect لجلب الوظائف بناءً على القسم المختار
+  useEffect(() => {
+    const fetchPositionsForDepartment = async () => {
+      if (formData.departmentId) {
+        // فقط إذا تم اختيار قسم
+        setIsDropdownLoading(true); // يمكنك استخدام حالة تحميل منفصلة للوظائف
+        try {
+          const response = await axiosInstance.get(
+            `/positions/for-select?departmentId=${formData.departmentId}`
+          );
+          if (response.data.success) {
+            setPositions([
+              { id: "", name: t("employees.form.selectPosition") },
+              ...response.data.data.map((pos) => ({
+                id: pos.id,
+                name: pos.title || pos.name,
+              })), // افترض أن API ترجع title
+            ]);
+          } else {
+            setPositions([
+              { id: "", name: t("employees.form.selectPosition") },
+            ]);
+          }
+        } catch (error) {
+          console.error("Failed to fetch positions for department:", error);
+          setPositions([{ id: "", name: t("employees.form.selectPosition") }]);
+        } finally {
+          setIsDropdownLoading(false); // أو حالة التحميل الخاصة بالوظائف
+        }
+      } else {
+        // إذا لم يتم اختيار قسم، أفرغ قائمة الوظائف أو اعرض كل الوظائف
+        setPositions([
+          {
+            id: "",
+            name: t("employees.form.selectPositionFirst", {
+              defaultValue: "Select a department first",
+            }),
+          },
+        ]);
+      }
+    };
+
+    fetchPositionsForDepartment();
+  }, [formData.departmentId, t]); // يعتمد على القسم المختار
+
   // --- ملء النموذج بالبيانات الأولية عند التعديل ---
   useEffect(() => {
     if (formType === "edit" && initialData) {
@@ -155,9 +200,12 @@ const EmployeeForm = ({
       formattedData.confirmPassword = "";
 
       // ✅  مهم: تعيين معرفات العلاقات
-      formattedData.departmentId = initialData.department?.id || ""; // احصل على ID من الكائن المتداخل
-      formattedData.positionId = initialData.position?.id || "";
-      formattedData.managerId = initialData.manager?.id || ""; // قد يكون null
+      formattedData.departmentId =
+        initialData.department?.id || initialData.departmentId || ""; // احصل على ID من الكائن المتداخل
+      formattedData.positionId =
+        initialData.position?.id || initialData.positionId || "";
+      formattedData.managerId =
+        initialData.manager?.id || initialData.managerId || ""; // قد يكون null
       // تأكد أن القيم النصية للـ enums موجودة في formData
       setFormData((prev) => ({ ...prev, ...formattedData }));
     } else {
@@ -209,70 +257,131 @@ const EmployeeForm = ({
 
   // --- التحقق من صحة النموذج في الواجهة الأمامية (أساسي) ---
   const validateForm = () => {
-    const errors = {};
-    // User fields (only for 'add' mode)
+    const errors = {}; //  <-- ابدأ بكائن أخطاء فارغ في كل مرة
+
+    // --- التحقق من حقول المستخدم (فقط في وضع الإضافة) ---
     if (formType === "add") {
-      if (!formData.username.trim())
+      if (!formData.username.trim()) {
         errors.username = t("validation.required", {
           field: t("auth.username"),
         });
-      if (!formData.email.trim())
+      } else if (formData.username.trim().length < 3) {
+        // مثال لشرط إضافي
+        errors.username = t("validation.minLength", {
+          field: t("auth.username"),
+          count: 3,
+        });
+      }
+
+      if (!formData.email.trim()) {
         errors.email = t("validation.required", { field: t("auth.email") });
-      else if (!/\S+@\S+\.\S+/.test(formData.email))
+      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
         errors.email = t("validation.invalidEmail");
-      if (!formData.password)
+      }
+
+      if (!formData.password) {
         errors.password = t("validation.required", {
           field: t("auth.password"),
         });
-      else if (formData.password.length < 6)
+      } else if (formData.password.length < 6) {
         errors.password = t("validation.minLength", {
           field: t("auth.password"),
           count: 6,
         });
-      if (formData.password !== formData.confirmPassword)
+      }
+
+      if (!formData.confirmPassword) {
+        // تحقق من confirmPassword أيضًا
+        errors.confirmPassword = t("validation.required", {
+          field: t("auth.confirmPassword"),
+        });
+      } else if (formData.password !== formData.confirmPassword) {
         errors.confirmPassword = t("auth.passwordsDoNotMatch");
+      }
     }
-    // Employee fields
-    if (!formData.employeeCode.trim())
+
+    // --- التحقق من حقول الموظف ---
+    if (!formData.employeeCode.trim()) {
       errors.employeeCode = t("validation.required", {
         field: t("employees.form.employeeCode"),
       });
-    if (!formData.firstName.trim())
+    }
+    if (!formData.firstName.trim()) {
       errors.firstName = t("validation.required", {
         field: t("auth.firstName"),
       });
-    if (!formData.lastName.trim())
+    }
+    if (!formData.lastName.trim()) {
       errors.lastName = t("validation.required", { field: t("auth.lastName") });
-    if (!formData.hireDate)
+    }
+    if (!formData.hireDate) {
+      // حقل التاريخ قد لا يحتاج لـ trim()
       errors.hireDate = t("validation.required", {
         field: t("employees.form.hireDate"),
       });
-    if (!formData.departmentId)
+    }
+    // التحقق من اختيار قيمة من القوائم المنسدلة المطلوبة
+    if (!formData.departmentId) {
+      // إذا كانت القيمة الافتراضية هي ""
       errors.departmentId = t("validation.required", {
         field: t("employees.table.department"),
       });
-    if (!formData.positionId)
+    }
+    if (!formData.positionId) {
+      // إذا كانت القيمة الافتراضية هي ""
       errors.positionId = t("validation.required", {
         field: t("employees.table.position"),
       });
+    }
 
-    // التحقق من experienceYears إذا تم إدخال قيمة
+    // التحقق من experienceYears إذا تم إدخال قيمة وكانت غير رقمية
     if (
       formData.experienceYears &&
+      formData.experienceYears.trim() !== "" &&
       isNaN(parseInt(formData.experienceYears.toString(), 10))
     ) {
       errors.experienceYears = t("validation.mustBeNumber", {
         field: t("employees.form.experienceYears"),
       });
+    } else if (
+      formData.experienceYears &&
+      parseInt(formData.experienceYears.toString(), 10) < 0
+    ) {
+      errors.experienceYears = t("validation.positiveNumber", {
+        field: t("employees.form.experienceYears"),
+      }); // مفتاح ترجمة جديد
     }
 
-    setLocalValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    // التحقق من profilePictureUrl إذا تم إدخال قيمة ولم تكن URL صالحًا
+    // function isValidHttpUrl(string) {
+    //   /* ... (نفس دالة التحقق من URL) ... */
+    // }
+    // if (
+    //   formData.profilePictureUrl &&
+    //   formData.profilePictureUrl.trim() !== "" &&
+    //   !isValidHttpUrl(formData.profilePictureUrl)
+    // ) {
+    //   errors.profilePictureUrl = t("validation.invalidUrl", {
+    //     defaultValue: "Invalid URL format.",
+    //   });
+    // }
+
+    // أضف أي قواعد تحقق أخرى هنا لجميع الحقول
+
+    setLocalValidationErrors(errors); //  <-- قم بتحديث الحالة بكائن الأخطاء الكامل
+    return Object.keys(errors).length === 0; //  <-- أرجع true فقط إذا لم تكن هناك أخطاء
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      //  <-- إذا كانت هناك أخطاء، توقف هنا
+      console.log(
+        "Client-side validation failed. Errors:",
+        localValidationErrors
+      );
+      return;
+    }
 
     let dataToSubmit = { ...formData };
 
@@ -661,7 +770,7 @@ const EmployeeForm = ({
             >
               {positions.map((pos) => (
                 <option key={pos.id} value={pos.id}>
-                  {pos.name}
+                  {pos.name || pos.title}
                 </option>
               ))}
             </select>

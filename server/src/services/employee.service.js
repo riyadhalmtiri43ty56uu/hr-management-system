@@ -15,9 +15,85 @@ import {
 
 // (getAllEmployeesService كما هي من الرد السابق)
 export const getAllEmployeesService = async (queryOptions = {}) => {
+  const {
+    page = 1, // الصفحة الحالية، الافتراضي 1
+    limit = 10, // عدد السجلات لكل صفحة، الافتراضي 10
+    sortBy = "createdAt", // عمود الفرز الافتراضي
+    sortOrder = "desc", // اتجاه الفرز الافتراضي (desc = تنازلي, asc = تصاعدي)
+    search = "", // مصطلح البحث
+
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    departmentId,
+    positionId,
+    status,
+    // يمكنك إضافة فلاتر أخرى هنا مثل departmentId, positionId, status, etc.
+    // departmentId = '',
+    // positionId = '',
+    // status = '',
+  } = queryOptions;
+
+  const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+  const take = parseInt(limit, 10);
+
+  // بناء شرط Where للبحث والتصفية
+  const whereConditions = {
+    isActive: true, // جلب النشطين فقط بشكل افتراضي (يمكن جعله خيارًا)
+    // (اختياري) يمكنك إضافة فلاتر إضافية هنا
+    // ...(departmentId && { departmentId }),
+    // ...(positionId && { positionId }),
+    // ...(status && { status }), // تأكد أن status هو قيمة enum صالحة
+  };
+
+  if (search) {
+    whereConditions.OR = [
+      // ابحث في عدة حقول
+      { firstName: { contains: search, mode: "insensitive" } }, // mode: 'insensitive' للبحث غير الحساس لحالة الأحرف
+      { lastName: { contains: search, mode: "insensitive" } },
+      { employeeCode: { contains: search, mode: "insensitive" } },
+      { user: { email: { contains: search, mode: "insensitive" } } }, // البحث في بريد المستخدم المرتبط
+      // يمكنك إضافة المزيد من الحقول للبحث فيها
+      // { position: { title: { contains: search, mode: 'insensitive' } } },
+      // { department: { name: { contains: search, mode: 'insensitive' } } },
+    ];
+  }
+
+  if (firstName)
+    whereConditions.firstName = { contains: firstName, mode: "insensitive" };
+  if (lastName)
+    whereConditions.lastName = { contains: lastName, mode: "insensitive" };
+  if (email)
+    whereConditions.user = { email: { contains: email, mode: "insensitive" } }; //  <-- تصفية ببريد المستخدم
+  if (phoneNumber)
+    whereConditions.phoneNumber = {
+      contains: phoneNumber,
+      mode: "insensitive",
+    };
+  if (departmentId) whereConditions.departmentId = departmentId;
+  if (positionId) whereConditions.positionId = positionId;
+  if (status) whereConditions.status = status;
+
+  // بناء شرط OrderBy للفرز
+  const orderByConditions = {};
+  if (sortBy && sortOrder) {
+    const order = sortOrder.toLowerCase() === "asc" ? "asc" : "desc";
+    if (sortBy === "positionTitle") {
+      // إذا كان columnKey من الأمام هو 'positionTitle'
+      orderByConditions.position = { title: order };
+    } else if (sortBy === "departmentName") {
+      orderByConditions.department = { name: order };
+    } else if (sortBy === "userEmail") {
+      orderByConditions.user = { email: order };
+    } else {
+      orderByConditions[sortBy] = order; // للحقول المباشرة
+    }
+  }
+
   try {
     const employees = await prisma.employee.findMany({
-      where: { isActive: true, ...queryOptions.filter }, // ✅  جلب الموظفين النشطين فقط بشكل
+      where: whereConditions,
       select: {
         id: true,
         employeeCode: true,
@@ -25,17 +101,34 @@ export const getAllEmployeesService = async (queryOptions = {}) => {
         lastName: true,
         position: { select: { title: true } },
         department: { select: { name: true } },
-        user: { select: { email: true } }, // تأكد أن هذا هو User model
+        user: { select: { email: true } },
         phoneNumber: true,
         hireDate: true,
         isActive: true,
         status: true,
+        // createdAt: true, // إذا كنت تريد الفرز حسب تاريخ الإنشاء
       },
+      orderBy: [orderByConditions], // orderBy يقبل مصفوفة من كائنات الفرز
+      skip: skip,
+      take: take,
     });
-    return employees;
+
+    const totalEmployees = await prisma.employee.count({
+      where: whereConditions, // نفس شروط البحث والتصفية لحساب الإجمالي الصحيح
+    });
+
+    return {
+      data: employees,
+      pagination: {
+        currentPage: parseInt(page, 10),
+        limit: take,
+        totalPages: Math.ceil(totalEmployees / take),
+        totalRecords: totalEmployees,
+      },
+    };
   } catch (error) {
     console.error("Prisma Error in getAllEmployeesService: ", error);
-    throw error;
+    throw error; // دع asyncHandler يتعامل مع الخطأ
   }
 };
 

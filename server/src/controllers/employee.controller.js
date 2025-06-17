@@ -14,13 +14,20 @@ import ApiError from "../utils/ApiError.js";
 
 // (دالة getAllEmployees و createEmployee و getEmployeeById كما هي من الردود السابقة)
 export const getAllEmployees = asyncHandler(async (req, res) => {
-  const employees = await getAllEmployeesService(req.query);
-  if (!employees || employees.length === 0) {
-    return res.status(200).json(new ApiResponse(200, [], "No employees found"));
-  }
+  // جميع معاملات البحث والفرز والتقسيم تأتي من req.query
+  const result = await getAllEmployeesService(req.query);
+
+  // لم نعد بحاجة للتحقق من employees.length === 0 هنا،
+  // لأن الخدمة ترجع كائنًا به data و pagination
+  // إذا كانت data فارغة، فهذا يعني أنه لا توجد نتائج تطابق البحث/الفلتر
+
   res
     .status(200)
-    .json(new ApiResponse(200, employees, "Employees retrieved successfully"));
+    .json(
+      new ApiResponse(200, result.data, "Employees retrieved successfully", {
+        pagination: result.pagination,
+      })
+    );
 });
 
 export const createEmployee = asyncHandler(async (req, res) => {

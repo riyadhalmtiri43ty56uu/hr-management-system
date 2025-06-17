@@ -102,6 +102,8 @@
     "errorFetching": "خطأ في جلب بيانات الموظفين.",
     "errorFetchingNetwork": "خطأ في الشبكة أثناء جلب الموظفين.",
     "noEmployeesFound": "لم يتم العثور على موظفين.",
+    "searchPlaceholder": "ابحث بالاسم أو الرمز أو البريد الإلكتروني...",
+    "addEmployee": "اضافة موظف",
     "table": {
       "name": "الاسم",
       "employeeId": "الرقم الوظيفي",
@@ -139,7 +141,8 @@
       "additionalInfo": "معلومات إضافية",
       "experienceYears": "سنوات الخبرة",
       "profilePicture": "الصورة الشخصية",
-      "bio": "نبذة / ملاحظات"
+      "bio": "نبذة / ملاحظات",
+      "selectPositionFirst": "حدد القسم اولا"
     }
   },
 
@@ -170,10 +173,16 @@
     }
   },
 
+  "search": "بحث",
+
   "validation": {
     "required": "حقل {{field}} مطلوب.",
     "invalidEmail": "يرجى إدخال بريد إلكتروني صالح.",
-    "minLength": "يجب أن يحتوي {{field}} على الأقل على {{count}} حروف."
+    "minLength": "يجب أن يحتوي {{field}} على الأقل على {{count}} حروف.",
+    "mustBeNumber": "يجب أن يكون {{field}} رقمًا.",
+    "minMaxSalary": "يجب أن يكون الحد الأقصى للراتب أكبر من أو يساوي الحد الأدنى.",
+    "positiveNumber": "يجب أن يكون {{field}} رقمًا موجبًا.",
+    "invalidUrl": "تنسيق الرابط غير صالح."
   },
 
   "loading": "جاري التحميل...",
@@ -187,5 +196,79 @@
   "viewDetails": "عرض التفاصيل",
   "edit": "تعديل",
   "delete": "حذف",
-  "searchPlaceholder": "ابحث عن موظفين..."
+  "searchPlaceholder": "ابحث عن موظفين...",
+
+  "departments": {
+    "departmentListTitle": "إدارة الأقسام",
+    "addDepartmentButton": "إضافة قسم جديد",
+    "addDepartmentTitle": "إضافة قسم جديد",
+    "editDepartmentTitle": "تعديل القسم: {{name}}",
+    "confirmDelete": "هل أنت متأكد أنك تريد جعل القسم '{{name}}' غير نشط؟",
+    "deleteSuccess": "تم جعل القسم غير نشط بنجاح.",
+    "errorDeleting": "حدث خطأ أثناء محاولة جعل القسم غير نشط.",
+    "addSuccess": "تمت إضافة القسم بنجاح!",
+    "updateSuccess": "تم تحديث القسم بنجاح!",
+    "errorAdding": "حدث خطأ أثناء إضافة القسم.",
+    "errorUpdating": "حدث خطأ أثناء تحديث القسم.",
+    "noDepartmentsFound": "لم يتم العثور على أي أقسام.",
+    "form": {
+      "name": "اسم القسم",
+      "code": "رمز القسم (اختياري)",
+      "description": "الوصف (اختياري)",
+      "parentDepartment": "القسم الرئيسي (اختياري)",
+      "selectParentOptional": "-- بدون قسم رئيسي (في المستوى الأعلى) --",
+      "manager": "مدير القسم (اختياري)",
+      "selectManagerOptional": "-- بدون مدير معين --",
+      "isActive": "قسم نشط",
+      "addDepartmentButton": "إضافة القسم",
+      "saveChangesButton": "حفظ التغييرات"
+    },
+    "table": {
+      "name": "الاسم",
+      "code": "الرمز",
+      "parentDepartment": "القسم الاب",
+      "employeesCount": "عدد الموظفين",
+      "positionsCount": "عدد المناصب",
+      "status": "الحالة"
+    }
+  },
+  "positions": {
+    "positionListTitle": "قائمة المناصب",
+    "addPositionButton": "إضافة منصب جديد",
+    "noPositionsFound": "لم يتم العثور على مناصب.",
+    "errorFetching": "حدث خطأ أثناء جلب المناصب.",
+    "errorFetchingNetwork": "حدث خطأ في الشبكة أثناء جلب المناصب.",
+    "addSuccess": "تمت إضافة المنصب بنجاح!",
+    "updateSuccess": "تم تحديث المنصب بنجاح!",
+    "deleteSuccess": "تم وضع المنصب كغير نشط بنجاح.",
+    "errorAdding": "حدث خطأ أثناء إضافة المنصب.",
+    "errorUpdating": "حدث خطأ أثناء تحديث المنصب.",
+    "errorDeleting": "حدث خطأ أثناء وضع المنصب كغير نشط.",
+    "confirmDelete": "هل أنت متأكد أنك تريد وضع المنصب \"{{title}}\" كغير نشط؟",
+    "addPositionTitle": "إضافة منصب جديد",
+    "editPositionTitle": "تعديل المنصب: {{title}}",
+    "form": {
+      "title": "عنوان المنصب",
+      "code": "رمز المنصب (اختياري)",
+      "description": "الوصف (اختياري)",
+      "selectDepartment": "-- اختر القسم --",
+      "jobLevel": "المستوى الوظيفي (اختياري)",
+      "baseSalaryMin": "الراتب الأساسي (الحد الأدنى، اختياري)",
+      "baseSalaryMax": "الراتب الأساسي (الحد الأقصى، اختياري)",
+      "isActive": "منصب نشط",
+      "saveChangesButton": "حفظ التغيير"
+    },
+    "table": {
+      "title": "العنوان",
+      "code": "الرمز"
+    }
+  },
+  "pagination": {
+    "page": "الصفحة {{currentPage}} من {{totalPages}}",
+    "totalRecords": "الإجمالي: {{totalRecords}} سجلاً",
+    "firstPage": "الصفحة الأولى",
+    "previousPage": "الصفحة السابقة",
+    "nextPage": "الصفحة التالية",
+    "lastPage": "الصفحة الأخيرة"
+  }
 }
