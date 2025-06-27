@@ -17,7 +17,8 @@
     "changeLanguage": "تغيير اللغة",
     "arabic": "العربية",
     "english": "English",
-    "addNew": "إضافة جديدة"
+    "addNew": "إضافة جديدة",
+    "closeMenu": "اغلق القائمة"
   },
 
   "sidebar": {
@@ -104,6 +105,8 @@
     "noEmployeesFound": "لم يتم العثور على موظفين.",
     "searchPlaceholder": "ابحث بالاسم أو الرمز أو البريد الإلكتروني...",
     "addEmployee": "اضافة موظف",
+    "viewAsGrid": "عرض كشبكة",
+    "viewAsList": "عرض كقائمة",
     "table": {
       "name": "الاسم",
       "employeeId": "الرقم الوظيفي",
@@ -143,6 +146,10 @@
       "profilePicture": "الصورة الشخصية",
       "bio": "نبذة / ملاحظات",
       "selectPositionFirst": "حدد القسم اولا"
+    },
+    "filter": {
+      "allDepartments": "كل الأقسام",
+      "allPositions": "كل المناصب"
     }
   },
 
@@ -197,6 +204,8 @@
   "edit": "تعديل",
   "delete": "حذف",
   "searchPlaceholder": "ابحث عن موظفين...",
+  "quickFilters": "فلاتر سريعة:",
+  "filter": "تصفية",
 
   "departments": {
     "departmentListTitle": "إدارة الأقسام",
@@ -264,11 +273,15 @@
     }
   },
   "pagination": {
-    "page": "الصفحة {{currentPage}} من {{totalPages}}",
-    "totalRecords": "الإجمالي: {{totalRecords}} سجلاً",
+    "page": "صفحة {{current}} من {{total}}",
+    "totalRecords": "الإجمالي: {{records}} سجلات",
     "firstPage": "الصفحة الأولى",
     "previousPage": "الصفحة السابقة",
     "nextPage": "الصفحة التالية",
-    "lastPage": "الصفحة الأخيرة"
+    "lastPage": "الصفحة الأخيرة",
+    "goToPage": "اذهب إلى صفحة {{page}}",
+    "itemsPerPage": "عناصر لكل صفحة",
+    "show": "عرض {{count}}",
+    "pageInfo": "معلومات الصفحة"
   }
 }

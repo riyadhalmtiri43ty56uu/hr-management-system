@@ -392,7 +392,6 @@ const SidebarItem = React.memo(
     };
 
     return (
-      // ... (باقي JSX لمكون SidebarItem كما كان، لا تغييرات هنا)
       <div className="mb-1">
         <NavLink
           to={item.path && !item.path.startsWith("#") ? item.path : "#"}

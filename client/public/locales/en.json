@@ -17,7 +17,8 @@
     "changeLanguage": "Change Language",
     "arabic": "العربية",
     "english": "English",
-    "addNew": "Add New"
+    "addNew": "Add New",
+    "closeMenu": "Close Menu"
   },
 
   "sidebar": {
@@ -103,6 +104,8 @@
     "noEmployeesFound": "No employees found.",
     "searchPlaceholder": "Search by name, code, email...",
     "addEmployee": "add Employee",
+    "viewAsGrid": "View as grid",
+    "viewAsList": "View as list",
     "table": {
       "name": "Name",
       "employeeId": "Employee ID",
@@ -142,6 +145,11 @@
       "profilePicture": "Profile Picture",
       "bio": "Bio / Notes",
       "selectPositionFirst": "select Position First"
+    },
+    "filter": {
+      "allDepartments": "All departments",
+      "allPositions": "All positions",
+      "allStatuses": "All statuses"
     }
   },
 
@@ -194,6 +202,8 @@
   "edit": "Edit",
   "delete": "Delete",
   "searchPlaceholder": "Search employees...",
+  "quickFilters": "Quick Filters:",
+  "filter": "Filter",
 
   "departments": {
     "departmentListTitle": "Departments Management",
@@ -261,11 +271,18 @@
     }
   },
   "pagination": {
-    "page": "Page {{currentPage}} of {{totalPages}}",
-    "totalRecords": "Total: {{totalRecords}} records",
+    "page": "Page {{current}} of {{total}}",
+    "totalRecords": "Total: {{records}} records",
     "firstPage": "First Page",
     "previousPage": "Previous Page",
     "nextPage": "Next Page",
-    "lastPage": "Last Page"
+    "lastPage": "Last Page",
+    "goToPage": "Go to page {{page}}",
+    "itemsPerPage": "Items per page",
+    "show": "Show {{count}}",
+    "pageInfo": "Page info"
+  },
+  "errors": {
+    "failedToFetchDetails": "Failed to fetch Details"
   }
 }

@@ -33,6 +33,7 @@ const AdvancedFilterForm = ({ activeFilters, onApplyFilters, onClose }) => {
   // حالات للقوائم المنسدلة للفلاتر
   const [departments, setDepartments] = useState([]);
   const [positions, setPositions] = useState([]);
+  const GENDERS_FOR_FILTER = ["", "MALE", "FEMALE", "OTHER"]; // أضف خيار "الكل"
   // ... (يمكنك إضافة المزيد مثل EmployeeStatuses إذا أردت جلبها من API بدلاً من تعريفها يدويًا)
 
   // املأ النموذج بقيم الفلاتر النشطة عند فتحه

@@ -375,11 +375,6 @@ const EmployeeForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      //  <-- إذا كانت هناك أخطاء، توقف هنا
-      console.log(
-        "Client-side validation failed. Errors:",
-        localValidationErrors
-      );
       return;
     }
 
@@ -431,7 +426,7 @@ const EmployeeForm = ({
       delete dataToSubmit.roles;
     }
 
-    console.log("Data being submitted to API:", dataToSubmit);
+    // console.log("Data being submitted to API:", dataToSubmit);
     onSubmit(dataToSubmit, formType === "edit" ? initialData?.id : null);
   };
 

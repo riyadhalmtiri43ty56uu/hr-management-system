@@ -15,13 +15,13 @@ import {
 
 // (getAllEmployeesService كما هي من الرد السابق)
 export const getAllEmployeesService = async (queryOptions = {}) => {
+  // ... (نفس الأكواد السابقة لـ page, limit, sortBy, etc.) ...
   const {
-    page = 1, // الصفحة الحالية، الافتراضي 1
-    limit = 10, // عدد السجلات لكل صفحة، الافتراضي 10
-    sortBy = "createdAt", // عمود الفرز الافتراضي
-    sortOrder = "desc", // اتجاه الفرز الافتراضي (desc = تنازلي, asc = تصاعدي)
-    search = "", // مصطلح البحث
-
+    page = 1,
+    limit = 10,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    search = "",
     firstName,
     lastName,
     email,
@@ -29,43 +29,29 @@ export const getAllEmployeesService = async (queryOptions = {}) => {
     departmentId,
     positionId,
     status,
-    // يمكنك إضافة فلاتر أخرى هنا مثل departmentId, positionId, status, etc.
-    // departmentId = '',
-    // positionId = '',
-    // status = '',
   } = queryOptions;
 
   const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-  const take = parseInt(limit, 10);
+  const take = parseInt(limit, 10) || 10;
+  console.log("Backend: Take Value:", take);
 
-  // بناء شرط Where للبحث والتصفية
-  const whereConditions = {
-    isActive: true, // جلب النشطين فقط بشكل افتراضي (يمكن جعله خيارًا)
-    // (اختياري) يمكنك إضافة فلاتر إضافية هنا
-    // ...(departmentId && { departmentId }),
-    // ...(positionId && { positionId }),
-    // ...(status && { status }), // تأكد أن status هو قيمة enum صالحة
-  };
+  const whereConditions = { isActive: true };
 
   if (search) {
-    whereConditions.OR = [
-      // ابحث في عدة حقول
-      { firstName: { contains: search, mode: "insensitive" } }, // mode: 'insensitive' للبحث غير الحساس لحالة الأحرف
+    if (!whereConditions.OR) whereConditions.OR = [];
+    whereConditions.OR.push(
+      { firstName: { contains: search, mode: "insensitive" } },
       { lastName: { contains: search, mode: "insensitive" } },
       { employeeCode: { contains: search, mode: "insensitive" } },
-      { user: { email: { contains: search, mode: "insensitive" } } }, // البحث في بريد المستخدم المرتبط
-      // يمكنك إضافة المزيد من الحقول للبحث فيها
-      // { position: { title: { contains: search, mode: 'insensitive' } } },
-      // { department: { name: { contains: search, mode: 'insensitive' } } },
-    ];
+      { user: { email: { contains: search, mode: "insensitive" } } }
+    );
   }
-
   if (firstName)
     whereConditions.firstName = { contains: firstName, mode: "insensitive" };
   if (lastName)
     whereConditions.lastName = { contains: lastName, mode: "insensitive" };
   if (email)
-    whereConditions.user = { email: { contains: email, mode: "insensitive" } }; //  <-- تصفية ببريد المستخدم
+    whereConditions.user = { email: { contains: email, mode: "insensitive" } };
   if (phoneNumber)
     whereConditions.phoneNumber = {
       contains: phoneNumber,
@@ -75,23 +61,22 @@ export const getAllEmployeesService = async (queryOptions = {}) => {
   if (positionId) whereConditions.positionId = positionId;
   if (status) whereConditions.status = status;
 
-  // بناء شرط OrderBy للفرز
   const orderByConditions = {};
   if (sortBy && sortOrder) {
     const order = sortOrder.toLowerCase() === "asc" ? "asc" : "desc";
     if (sortBy === "positionTitle") {
-      // إذا كان columnKey من الأمام هو 'positionTitle'
       orderByConditions.position = { title: order };
     } else if (sortBy === "departmentName") {
       orderByConditions.department = { name: order };
     } else if (sortBy === "userEmail") {
       orderByConditions.user = { email: order };
     } else {
-      orderByConditions[sortBy] = order; // للحقول المباشرة
+      orderByConditions[sortBy] = order;
     }
   }
 
   try {
+    // جلب الموظفين
     const employees = await prisma.employee.findMany({
       where: whereConditions,
       select: {
@@ -106,29 +91,53 @@ export const getAllEmployeesService = async (queryOptions = {}) => {
         hireDate: true,
         isActive: true,
         status: true,
-        // createdAt: true, // إذا كنت تريد الفرز حسب تاريخ الإنشاء
       },
-      orderBy: [orderByConditions], // orderBy يقبل مصفوفة من كائنات الفرز
+      orderBy: [orderByConditions],
       skip: skip,
       take: take,
     });
 
-    const totalEmployees = await prisma.employee.count({
-      where: whereConditions, // نفس شروط البحث والتصفية لحساب الإجمالي الصحيح
-    });
+    // **** حساب العدد الإجمالي للسجلات المطابقة ****
+    let totalEmployees = 0; // ابدأ بـ 0
+    try {
+      totalEmployees = await prisma.employee.count({
+        where: whereConditions,
+      });
+      console.log("Backend: Total Employees from count:", totalEmployees);
+    } catch (countError) {
+      console.error("Backend Error during employee.count(): ", countError);
+      // إذا فشل count، سنستمر بـ totalEmployees = 0 أو نعطي خطأ
+      // في هذه الحالة، لن نُحدث totalRecords وسيعالج الفرونت إند ذلك كحالة "invalid"
+      // لكن إذا كان لديك حالات فشل متكررة، يجب معالجتها
+    }
+    console.log("Backend: Take value:", take);
+
+    // تأكد أن القيمة المُرجعة لـ totalRecords هي دائمًا رقم صحيح
+    const finalTotalRecords =
+      typeof totalEmployees === "number" && totalEmployees >= 0
+        ? totalEmployees
+        : 0;
+
+    const pagination = {
+      totalRecords: finalTotalRecords,
+      currentPage: parseInt(page, 10),
+      totalPages: Math.max(1, Math.ceil(finalTotalRecords / take)),
+    };
 
     return {
+      success: true,
       data: employees,
-      pagination: {
-        currentPage: parseInt(page, 10),
-        limit: take,
-        totalPages: Math.ceil(totalEmployees / take),
-        totalRecords: totalEmployees,
-      },
+      pagination,
+      statusCode: 200,
+      message: "Employees retrieved successfully",
     };
   } catch (error) {
-    console.error("Prisma Error in getAllEmployeesService: ", error);
-    throw error; // دع asyncHandler يتعامل مع الخطأ
+    console.error("Backend Error in getAllEmployeesService: ", error);
+    return {
+      success: false,
+      message: "Failed to fetch employees",
+      error: error.message,
+    };
   }
 };
 
